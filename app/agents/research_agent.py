@@ -6,7 +6,7 @@ from typing import Any
 
 from google import genai
 
-from config.settings import GEMINI_API_KEY, GEMMA_MODEL, MAX_SEARCHES, MAX_SOURCES
+from config.settings import (GEMINI_API_KEY, GEMMA_MODEL, MAX_SEARCHES, MAX_SOURCES,\n    MAX_VERIFICATION_ROUNDS, MAX_FOLLOWUP_SEARCHES,)
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
 from app.research.planner import parse_plan
 from app.research.evidence import build_sources, compact_evidence
@@ -111,6 +111,38 @@ SOURCES:
             if isinstance(item, dict) and item.get("claim_a") and item.get("claim_b")
         ]
 
+    def _followup_queries(self, question, verified, contradictions) -> list[str]:
+        unresolved = [
+            f"Claim: {v.claim}\nStatus: {v.status}\nReason: {v.reasoning}"
+            for v in verified if v.status in {"mixed", "unsupported"}
+        ]
+        conflicts = [
+            f"Topic: {c.topic}\nA: {c.claim_a}\nB: {c.claim_b}"
+            for c in contradictions
+        ]
+        if not unresolved and not conflicts:
+            return []
+
+        prompt = (
+            "You are ScoutAI's research verifier. Generate targeted web-search "
+            "queries to resolve unresolved claims or contradictions.\n\n"
+            f"USER QUESTION:\n{question}\n\n"
+            f"UNRESOLVED CLAIMS:\n{chr(10).join(unresolved) or 'None'}\n\n"
+            f"CONTRADICTIONS:\n{chr(10).join(conflicts) or 'None'}\n\n"
+            f"Return ONLY JSON: {{\"queries\":[\"query 1\",\"query 2\"]}}. "
+            f"Generate at most {MAX_FOLLOWUP_SEARCHES} targeted queries. "
+            "Prefer primary, official, academic, or technical sources. "
+            "Do not answer the claims; only create queries."
+        )
+        try:
+            data = self._json(self._generate(prompt))
+        except Exception:
+            return []
+        return [
+            q.strip() for q in data.get("queries", [])
+            if isinstance(q, str) and q.strip()
+        ][:MAX_FOLLOWUP_SEARCHES]
+
     def _synthesize(self, question, plan, sources, verified, contradictions) -> str:
         verification_text = "\n".join(
             f"- {v.status.upper()}: {v.claim} [{', '.join(v.source_ids)}] — {v.reasoning}"
@@ -171,6 +203,25 @@ Rules:
 
         verified = self._verify(sources, question)
         contradictions = self._contradictions(sources)
+
+        # Autonomous verification loop: unresolved claims/conflicts trigger
+        # targeted searches, followed by another verification pass.
+        for _ in range(MAX_VERIFICATION_ROUNDS):
+            followups = self._followup_queries(question, verified, contradictions)
+            if not followups:
+                break
+            extra_raw = asyncio.run(self._search_parallel(followups))
+            existing = {s.url for s in sources if s.url}
+            new_raw = [x for x in extra_raw if not x.get("url") or x.get("url") not in existing]
+            if not new_raw:
+                break
+            sources = build_sources([
+                {"title": s.title, "url": s.url, "snippet": s.snippet, "source": s.publisher}
+                for s in sources
+            ] + new_raw)[:MAX_SOURCES]
+            verified = self._verify(sources, question)
+            contradictions = self._contradictions(sources)
+
         result = ResearchResult(
             question=question,
             plan=plan,
