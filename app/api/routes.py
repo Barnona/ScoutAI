@@ -23,10 +23,11 @@ async def research(request: ResearchRequest) -> ResearchResponse:
 @router.post("/research/stream")
 async def research_stream(request: ResearchRequest) -> StreamingResponse:
     async def event_stream():
-        queue: asyncio.Queue[dict | None] = asyncio.Queue()
+        queue: asyncio.Queue[dict] = asyncio.Queue()
+        loop = asyncio.get_running_loop()
 
-        async def emit(event: dict):
-            await queue.put(event)
+        def emit(event: dict):
+            loop.call_soon_threadsafe(queue.put_nowait, event)
 
         task = asyncio.create_task(run_research(request.question, emit=emit))
 
@@ -34,11 +35,14 @@ async def research_stream(request: ResearchRequest) -> StreamingResponse:
             while True:
                 if task.done() and queue.empty():
                     break
-                event = await queue.get()
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=0.25)
+                except asyncio.TimeoutError:
+                    continue
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
 
-            report = await task
-            yield f"data: {json.dumps({'type': 'complete', 'message': 'Research complete', 'data': {'report': report}}, ensure_ascii=False)}\n\n"
+            result = await task
+            yield f"data: {json.dumps({'type': 'complete', 'message': 'Research complete', 'data': {'result': result}}, ensure_ascii=False)}\n\n"
         except Exception as exc:
             if not task.done():
                 task.cancel()
