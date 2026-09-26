@@ -49,3 +49,13 @@ html[data-theme="light"] .brandMark b,.themeSwitch button.selected{color:#fff}
 html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 22px rgba(109,40,217,.2)}
 html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:#fff}
 html[data-theme="light"] .launch:disabled{background:#b9a8d8;color:#f4f0fa}
+
+/* Launch button follows the theme-switch palette */
+:root{--launch-bg:#8b5cf6;--launch-hover:#7c3aed;--launch-text:#ffffff}
+.launch,.launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 24px rgba(139,92,246,.22);transition:background .45s ease,color .45s ease,box-shadow .45s ease,transform .2s ease}
+.launch:hover:not(:disabled){background:var(--launch-hover);color:#fff;box-shadow:0 0 32px rgba(139,92,246,.34)}
+.launch:disabled{background:#51456f;color:#cfc8dc}
+:root[data-theme="light"]{--launch-bg:#7041d8;--launch-hover:#5830b5;--launch-text:#ffffff}
+html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 22px rgba(112,65,216,.2)}
+html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:#fff}
+html[data-theme="light"] .launch:disabled{background:#b8a9d2;color:#f5f1fa}
