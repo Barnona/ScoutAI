@@ -59,3 +59,7 @@ html[data-theme="light"] .launch:disabled{background:#b9a8d8;color:#f4f0fa}
 html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 22px rgba(112,65,216,.2)}
 html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:#fff}
 html[data-theme="light"] .launch:disabled{background:#b8a9d2;color:#f5f1fa}
+
+/* Refined logo glyph */
+.brandMark b{font-size:25px;line-height:1;font-weight:900;letter-spacing:-.08em;color:#f8f3ff;z-index:5;text-shadow:0 0 14px rgba(139,92,246,.8)}
+html[data-theme="light"] .brandMark b{color:#000000;text-shadow:none}
