@@ -6,7 +6,7 @@ ScoutAI is a Python-first research agent that plans searches, retrieves current 
 
 This version uses:
 - Google GenAI SDK
-- Gemma 3 (`gemma-3-27b-it` by default)
+- Configurable Gemma model (the repository default is `gemma-4-31b-it`)
 - SerpApi Python SDK
 - FastAPI
 - FAISS scaffolding for future RAG
@@ -20,13 +20,13 @@ User
   ↓
 ScoutAI
   ↓
-Gemma 3 — research planning
+Gemma — research planning
   ↓
 SerpApi — live web search
   ↓
 Evidence collection
   ↓
-Gemma 3 — synthesis + contradiction reporting
+Gemma — synthesis + contradiction reporting
   ↓
 Cited research report
 ```
@@ -55,7 +55,7 @@ Edit `.env`:
 
 ```env
 GEMINI_API_KEY=your_google_ai_studio_key
-GEMMA_MODEL=gemma-3-27b-it
+GEMMA_MODEL=gemma-4-31b-it
 SERPAPI_API_KEY=your_serpapi_key
 MAX_SEARCHES=5
 MAX_SOURCES=12
@@ -72,6 +72,27 @@ Example:
 ```text
 Compare current RISC-V edge AI development boards suitable for engineering students.
 ```
+
+## Live Research Trace
+
+ScoutAI also exposes a Server-Sent Events endpoint for a live agent trace. It reports planning, searching, source collection, verification, contradiction analysis, follow-up searches, and synthesis as the research runs.
+
+```text
+POST /api/research/stream
+Content-Type: application/json
+
+{"question":"Your research question"}
+```
+
+Example event flow:
+
+```text
+planning → planning_complete → searching → sources_found
+→ verifying → contradictions → followup_search
+→ synthesizing → complete
+```
+
+This endpoint is intended for the upcoming React/Next.js dashboard and can also be consumed by any SSE-capable client.
 
 ## FastAPI
 
