@@ -273,5 +273,6 @@ Rules:
 research_agent = ScoutAIResearchAgent()
 
 
-async def run_research(question: str) -> str:
-    return await research_agent.run(question)
+async def run_research(question: str, emit=None) -> str:
+    """Run a research mission, optionally streaming progress events."""
+    return await research_agent.run(question, emit=emit)
