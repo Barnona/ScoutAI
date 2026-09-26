@@ -17,46 +17,6 @@
 .brandMark b{font:800 20px Space Mono,monospace;color:#dffefa;text-shadow:0 0 12px rgba(41,230,207,.8);z-index:3}.radarCore{position:absolute;width:7px;height:7px;background:var(--amber);border-radius:50%;box-shadow:0 0 12px var(--amber);z-index:4}.radarSweep{position:absolute;width:50%;height:1px;right:50%;top:50%;transform-origin:right center;background:linear-gradient(90deg,var(--amber),transparent);animation:radarSpin 2.8s linear infinite;z-index:2}.radarArc{position:absolute;border:1px solid rgba(41,230,207,.34);border-radius:50%}.arcOne{inset:9px}.arcTwo{inset:17px;border-color:rgba(255,173,66,.35)}@keyframes radarSpin{to{transform:rotate(360deg)}}.brandName span{color:var(--amber)}.eyebrow{color:var(--amber)}.hero h1 em{color:var(--cyan)}.launch{background:linear-gradient(110deg,var(--cyan),#16bda9 55%,var(--amber));color:#061014;box-shadow:0 0 24px rgba(41,230,207,.16),0 0 20px rgba(255,173,66,.08)}.launch:hover{box-shadow:0 0 34px rgba(41,230,207,.25),0 0 28px rgba(255,173,66,.15);transform:translateY(-2px)}.status i{background:var(--amber);box-shadow:0 0 10px var(--amber)}.stage.active{color:var(--cyan);border-color:rgba(41,230,207,.4)}.stage.current{color:var(--amber);border-color:rgba(255,173,66,.55);text-shadow:0 0 10px rgba(255,173,66,.5)}.eventDot{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}.event:nth-child(even) .eventDot{background:var(--amber);box-shadow:0 0 10px var(--amber)}.panelTitle small{color:var(--amber)}.sourceTop span,.sourceLink,.citationRow a{color:var(--cyan)}.sourceCard:hover{border-color:rgba(41,230,207,.65);box-shadow:0 12px 35px rgba(41,230,207,.09)}.claimCard.mixed{border-left-color:var(--amber)}.confidence.medium,.status.mixed{color:var(--amber);border-color:rgba(255,173,66,.5)}.conflictCard{border-color:rgba(255,173,66,.25)}.conflictCard summary span,.vs{color:var(--amber)}.themeSwitch button.selected{background:linear-gradient(90deg,var(--cyan),var(--amber));color:#061014}.missionBox:focus-within{border-color:rgba(41,230,207,.6);box-shadow:0 0 35px rgba(41,230,207,.08),0 0 30px rgba(255,173,66,.04)}
 :root[data-theme="light"]{--cyan:#008f7a;--cyan2:#006f62;--amber:#c76d00;--amber2:#9b5000;--bg:#f0f5f4;--panel:#ffffff;--line:#c7d6d4;--text:#172a2b;--muted:#63777a}html[data-theme="light"] .shell{background:radial-gradient(ellipse at 82% 8%,rgba(199,109,0,.09),transparent 25%),radial-gradient(ellipse at 18% 35%,rgba(0,143,122,.08),transparent 30%),#f0f5f4}html[data-theme="light"] .brandMark{background:radial-gradient(circle,rgba(0,143,122,.11),rgba(199,109,0,.05) 55%,transparent 70%);box-shadow:0 0 20px rgba(0,143,122,.1)}
 
-/* Rose × Electric Blue identity */
-:root{--cyan:#58a6ff;--cyan2:#9cc8ff;--amber:#ff4f8b;--amber2:#ff9bc0;--ink:#060811;--panel:#0b0f1c;--line:#252a3d;--text:#e8ecf7;--muted:#7e879d}
-.shell{background:radial-gradient(ellipse at 82% 8%,rgba(255,79,139,.13),transparent 27%),radial-gradient(ellipse at 15% 35%,rgba(88,166,255,.13),transparent 31%),radial-gradient(ellipse at 50% 105%,rgba(126,87,255,.08),transparent 30%),#060811}
-.shell:after{background-image:linear-gradient(rgba(88,166,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,79,139,.025) 1px,transparent 1px)}
-.brandMark{border-color:rgba(88,166,255,.6);background:radial-gradient(circle,rgba(88,166,255,.16),rgba(255,79,139,.08) 48%,transparent 72%);box-shadow:0 0 28px rgba(88,166,255,.16),inset 0 0 22px rgba(255,79,139,.08)}
-.brandMark b{color:#f2f6ff;text-shadow:0 0 12px rgba(88,166,255,.9)}.radarCore{background:var(--amber);box-shadow:0 0 14px var(--amber)}.radarSweep{background:linear-gradient(90deg,var(--amber),var(--cyan),transparent)}.radarArc{border-color:rgba(88,166,255,.38)}.arcTwo{border-color:rgba(255,79,139,.38)}
-.brandName span{color:var(--amber)}.eyebrow{color:var(--amber)}.hero h1 em{color:var(--cyan)}
-.launch{background:linear-gradient(105deg,#ff4f8b 0%,#9d5cff 48%,#58a6ff 100%);color:#fff;box-shadow:0 0 30px rgba(157,92,255,.22),0 0 18px rgba(255,79,139,.12)}
-.launch:hover{box-shadow:0 0 38px rgba(88,166,255,.25),0 0 35px rgba(255,79,139,.18);transform:translateY(-2px)}
-.status i{background:var(--amber);box-shadow:0 0 11px var(--amber)}.stage.active{color:var(--cyan);border-color:rgba(88,166,255,.4)}.stage.current{color:var(--amber);border-color:rgba(255,79,139,.55);text-shadow:0 0 11px rgba(255,79,139,.5)}
-.eventDot{background:var(--cyan);box-shadow:0 0 10px var(--cyan)}.event:nth-child(even) .eventDot{background:var(--amber);box-shadow:0 0 10px var(--amber)}
-.panelTitle small{color:var(--amber)}.sourceTop span,.sourceLink,.citationRow a{color:var(--cyan)}.sourceCard:hover{border-color:rgba(88,166,255,.65);box-shadow:0 12px 35px rgba(88,166,255,.1)}
-.claimCard.mixed{border-left-color:var(--amber)}.confidence.medium,.status.mixed{color:var(--amber);border-color:rgba(255,79,139,.5)}.conflictCard{border-color:rgba(255,79,139,.28)}.conflictCard summary span,.vs{color:var(--amber)}
-.themeSwitch button.selected{background:linear-gradient(90deg,var(--amber),#9d5cff,var(--cyan));color:#fff}.missionBox:focus-within{border-color:rgba(88,166,255,.6);box-shadow:0 0 35px rgba(88,166,255,.1),0 0 30px rgba(255,79,139,.06)}
-.reportHeader h2 em{background:linear-gradient(90deg,var(--amber),#9d5cff,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent}
-.confidence.high{color:var(--cyan);border-color:rgba(88,166,255,.45)}.confidence.low,.status.unsupported{color:#ff6f9e;border-color:rgba(255,79,139,.45)}
-@keyframes radarSpin{to{transform:rotate(360deg)}}@keyframes colourPulse{0%,100%{filter:saturate(1)}50%{filter:saturate(1.5) brightness(1.08)}}.brandMark{animation:pulseGlow 3s ease-in-out infinite}.radarCore{animation:colourPulse 1.8s ease-in-out infinite}
-:root[data-theme="light"]{--cyan:#1769d1;--cyan2:#0d56b4;--amber:#d72e6f;--amber2:#a91f53;--bg:#f4f6fb;--panel:#fff;--line:#cbd2df;--text:#172033;--muted:#68738a}
-html[data-theme="light"] .shell{background:radial-gradient(ellipse at 82% 8%,rgba(215,46,111,.1),transparent 27%),radial-gradient(ellipse at 15% 35%,rgba(23,105,209,.1),transparent 31%),#f4f6fb}
-html[data-theme="light"] .brandMark{background:radial-gradient(circle,rgba(23,105,209,.12),rgba(215,46,111,.07) 48%,transparent 72%);box-shadow:0 0 20px rgba(23,105,209,.1)}
-
-/* Solid controls + theme-aware typography */
-.launch{background:#ff4f8b;color:#ffffff;box-shadow:0 0 24px rgba(255,79,139,.18)}.launch:hover{background:#e83f79;color:#ffffff;box-shadow:0 0 30px rgba(255,79,139,.28)}
-.themeSwitch button{color:var(--muted)}.themeSwitch button.selected{background:var(--cyan);color:#07101c}
-.brandName{color:#f4f7ff}.brandName span{color:var(--amber)}
-.brandMark b{color:#f4f7ff}
-:root[data-theme="light"] .brandName{color:#182236}:root[data-theme="light"] .brandName span{color:var(--amber)}:root[data-theme="light"] .brandMark b{color:#182236}
-:root[data-theme="light"] .launch{background:#d72e6f;color:#ffffff;box-shadow:0 0 20px rgba(215,46,111,.16)}:root[data-theme="light"] .launch:hover{background:#bd245e;color:#ffffff}
-:root[data-theme="light"] .themeSwitch button.selected{background:var(--cyan);color:#ffffff}
-
-/* Theme-aware solid launch button */
-:root{--launch-bg:#ff3f82;--launch-hover:#e52f70;--launch-text:#ffffff}
-.launch,.launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 24px rgba(255,63,130,.18)}
-.launch:hover:not(:disabled){background:var(--launch-hover);color:var(--launch-text);box-shadow:0 0 30px rgba(255,63,130,.28)}
-.launch:disabled{background:#7f4057;color:#d8c7cd}
-:root[data-theme="light"]{--launch-bg:#b51f59;--launch-hover:#951746;--launch-text:#ffffff}
-html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 20px rgba(181,31,89,.16)}
-html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:var(--launch-text)}
-html[data-theme="light"] .launch:disabled{background:#d5a1b4;color:#fff}
-
 /* Violet × Scarlet cinematic theme */
 :root{--cyan:#8b5cf6;--cyan2:#b99cff;--amber:#ff365f;--amber2:#ff7d98;--launch-bg:#ff365f;--launch-hover:#d91f46;--launch-text:#fff;--ink:#07060d;--panel:#0d0a15;--line:#2b2338;--text:#eee9f7;--muted:#877d99}
 .shell{background:radial-gradient(ellipse at 80% 5%,rgba(255,54,95,.14),transparent 28%),radial-gradient(ellipse at 16% 32%,rgba(139,92,246,.16),transparent 32%),radial-gradient(ellipse at 52% 105%,rgba(112,61,220,.1),transparent 32%),#07060d}
