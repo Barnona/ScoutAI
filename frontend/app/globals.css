@@ -79,3 +79,13 @@ html[data-theme="light"] .launch:disabled{background:#d5a1b4;color:#fff}
 html[data-theme="light"] .shell{background:radial-gradient(ellipse at 80% 5%,rgba(197,31,72,.1),transparent 28%),radial-gradient(ellipse at 16% 32%,rgba(112,65,216,.1),transparent 32%),#f7f3fa}
 html[data-theme="light"] .brandMark{background:radial-gradient(circle,rgba(112,65,216,.13),rgba(197,31,72,.07) 48%,transparent 73%);box-shadow:0 0 22px rgba(112,65,216,.12)}
 html[data-theme="light"] .brandMark b,.themeSwitch button.selected{color:#fff}
+
+/* Final violet-only launch control */
+:root{--launch-bg:#7c3aed;--launch-hover:#6d28d9;--launch-text:#ffffff}
+.launch,.launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 24px rgba(124,58,237,.22)}
+.launch:hover:not(:disabled){background:var(--launch-hover);color:#fff;box-shadow:0 0 32px rgba(124,58,237,.34)}
+.launch:disabled{background:#4c3970;color:#cfc5e8}
+:root[data-theme="light"]{--launch-bg:#6d28d9;--launch-hover:#5b21b6;--launch-text:#ffffff}
+html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 22px rgba(109,40,217,.2)}
+html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:#fff}
+html[data-theme="light"] .launch:disabled{background:#b9a8d8;color:#f4f0fa}
