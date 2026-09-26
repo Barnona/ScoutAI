@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const API=process.env.NEXT_PUBLIC_API_URL||"http://localhost:8000";
 const stages=[["planning","PLAN"],["searching","SEARCH"],["sources_found","EVIDENCE"],["verifying","VERIFY"],["contradictions","CONFLICT"],["followup_search","RECHECK"],["synthesizing","SYNTHESIZE"],["complete","COMPLETE"]];
@@ -11,7 +11,9 @@ function SourceCard({source}){return <a className="sourceCard" href={source.url|
 function ClaimCard({finding,sources}){const linked=(finding.source_ids||[]).map(id=>sources.find(s=>s.source_id===id)).filter(Boolean);return <article className={"claimCard "+finding.status}><div className="claimTop"><span>CLAIM</span><Confidence value={finding.confidence}/></div><h3>{finding.claim}</h3><div className="claimMeta"><span className={"status "+finding.status}>{finding.status.toUpperCase()}</span><span>{linked.length} evidence source{linked.length===1?"":"s"}</span></div><details><summary>EXPAND EVIDENCE & REASONING</summary><p className="reasoning">{finding.reasoning||"No additional reasoning supplied."}</p><div className="citationRow">{linked.map(s=><a key={s.source_id} href={s.url||"#"} target="_blank" rel="noreferrer">[{s.source_id}] {s.publisher||s.title}</a>)}</div></details></article>}
 
 export default function Home(){
- const [question,setQuestion]=useState(""),[events,setEvents]=useState([]),[result,setResult]=useState(null),[running,setRunning]=useState(false),[error,setError]=useState(""),[sources,setSources]=useState(0),[conflicts,setConflicts]=useState(0);
+ const [question,setQuestion]=useState(""),[events,setEvents]=useState([]),[result,setResult]=useState(null),[running,setRunning]=useState(false),[error,setError]=useState(""),[sources,setSources]=useState(0),[conflicts,setConflicts]=useState(0),[theme,setTheme]=useState("dark");
+ useEffect(()=>{const saved=localStorage.getItem("scoutai-theme")||"dark";setTheme(saved);document.documentElement.dataset.theme=saved},[]);
+ function changeTheme(next){setTheme(next);localStorage.setItem("scoutai-theme",next);document.documentElement.dataset.theme=next}
  const active=useMemo(()=>{let n=-1;events.forEach(e=>{const i=stages.findIndex(s=>s[0]===e.type);if(i>=0)n=Math.max(n,i)});return n},[events]);
  async function launch(){
   if(!question.trim()||running)return;setRunning(true);setEvents([]);setResult(null);setError("");setSources(0);setConflicts(0);
@@ -20,7 +22,7 @@ export default function Home(){
  }
  const synthesis=result?.synthesis||{},findings=synthesis.key_findings||[],sourceList=result?.sources||[];
  return <main className="shell"><div className="scanline"/>
-  <header className="topbar"><div className="brand"><div className="brandMark">S</div><div><div className="brandName">SCOUT<span>AI</span></div><div className="brandSub">AUTONOMOUS RESEARCH COMMAND</div></div></div><div className="status"><i/> SYSTEM ONLINE <b>v0.4</b></div></header>
+  <header className="topbar"><div className="brand"><div className="brandMark">S</div><div><div className="brandName">SCOUT<span>AI</span></div><div className="brandSub">AUTONOMOUS RESEARCH COMMAND</div></div></div><div className="topActions"><div className="themeSwitch" role="group" aria-label="Theme selection"><button className={theme==="dark"?"selected":""} onClick={()=>changeTheme("dark")}>☾ DARK</button><button className={theme==="light"?"selected":""} onClick={()=>changeTheme("light")}>☼ LIGHT</button></div><div className="status"><i/> SYSTEM ONLINE <b>v0.4</b></div></div></header>
   <section className="hero"><div className="eyebrow">◈ INTELLIGENCE CONSOLE / LIVE WEB RESEARCH</div><h1>Deploy a research <em>mission.</em></h1><p>ScoutAI plans, searches, verifies, challenges conflicting evidence, and turns the evidence graph into an interactive intelligence brief.</p>
    <div className="missionBox"><div className="missionHeader"><span>NEW RESEARCH MISSION</span><kbd>CTRL + ENTER</kbd></div><textarea value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))launch()}} placeholder="What do you want ScoutAI to investigate?" disabled={running}/><div className="missionFooter"><div className="presets">{presets.map(p=><button key={p} onClick={()=>setQuestion(p)} disabled={running}>{p.slice(0,30)}…</button>)}</div><button className="launch" onClick={launch} disabled={running||!question.trim()}>{running?"SCOUTING...":"LAUNCH MISSION ↗"}</button></div></div>
   </section>
