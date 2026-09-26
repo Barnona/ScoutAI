@@ -1,20 +1,24 @@
-"""Planning scaffolding for the explicit multi-step research pipeline.
+"""Gemma-driven structured research planner."""
 
-The v0.1 agent can plan implicitly through its tool loop. This module is
-ready for the v0.2 structured planner that will emit ResearchPlan objects.
-"""
+import json
 
 from app.agents.schemas import ResearchPlan, ResearchTask
 
 
-def starter_plan(question: str) -> ResearchPlan:
-    return ResearchPlan(
-        objective=question,
-        tasks=[
-            ResearchTask(
-                task_id=1,
-                question=question,
-                reason="Initial research task for the MVP.",
-            )
-        ],
-    )
+def parse_plan(text: str, question: str, max_tasks: int = 6) -> ResearchPlan:
+    cleaned = text.strip()
+    if cleaned.startswith("json"):
+        cleaned = cleaned[4:].strip()
+    start, end = cleaned.find("{"), cleaned.rfind("}")
+    if start < 0 or end <= start:
+        raise ValueError("Planner did not return JSON.")
+    data = json.loads(cleaned[start:end + 1])
+    tasks = []
+    for i, item in enumerate(data.get("tasks", [])[:max_tasks], 1):
+        if isinstance(item, dict) and item.get("question"):
+            tasks.append(ResearchTask(
+                task_id=i,
+                question=item["question"].strip(),
+                reason=item.get("reason", ""),
+            ))
+    return ResearchPlan(objective=question, tasks=tasks)
