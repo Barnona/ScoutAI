@@ -37,3 +37,12 @@
 :root[data-theme="light"]{--cyan:#1769d1;--cyan2:#0d56b4;--amber:#d72e6f;--amber2:#a91f53;--bg:#f4f6fb;--panel:#fff;--line:#cbd2df;--text:#172033;--muted:#68738a}
 html[data-theme="light"] .shell{background:radial-gradient(ellipse at 82% 8%,rgba(215,46,111,.1),transparent 27%),radial-gradient(ellipse at 15% 35%,rgba(23,105,209,.1),transparent 31%),#f4f6fb}
 html[data-theme="light"] .brandMark{background:radial-gradient(circle,rgba(23,105,209,.12),rgba(215,46,111,.07) 48%,transparent 72%);box-shadow:0 0 20px rgba(23,105,209,.1)}
+
+/* Solid controls + theme-aware typography */
+.launch{background:#ff4f8b;color:#ffffff;box-shadow:0 0 24px rgba(255,79,139,.18)}.launch:hover{background:#e83f79;color:#ffffff;box-shadow:0 0 30px rgba(255,79,139,.28)}
+.themeSwitch button{color:var(--muted)}.themeSwitch button.selected{background:var(--cyan);color:#07101c}
+.brandName{color:#f4f7ff}.brandName span{color:var(--amber)}
+.brandMark b{color:#f4f7ff}
+:root[data-theme="light"] .brandName{color:#182236}:root[data-theme="light"] .brandName span{color:var(--amber)}:root[data-theme="light"] .brandMark b{color:#182236}
+:root[data-theme="light"] .launch{background:#d72e6f;color:#ffffff;box-shadow:0 0 20px rgba(215,46,111,.16)}:root[data-theme="light"] .launch:hover{background:#bd245e;color:#ffffff}
+:root[data-theme="light"] .themeSwitch button.selected{background:var(--cyan);color:#ffffff}
