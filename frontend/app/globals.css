@@ -63,3 +63,11 @@ html[data-theme="light"] .launch:disabled{background:#b8a9d2;color:#f5f1fa}
 /* Refined logo glyph */
 .brandMark b{font-size:25px;line-height:1;font-weight:900;letter-spacing:-.08em;color:#f8f3ff;z-index:5;text-shadow:0 0 14px rgba(139,92,246,.8)}
 html[data-theme="light"] .brandMark b{color:#000000;text-shadow:none}
+
+/* Final control cleanup */
+.launch,.launch:not(:disabled){background:#8b5cf6!important;color:#fff!important;border:1px solid #a78bfa!important;box-shadow:0 0 18px rgba(139,92,246,.35),0 0 42px rgba(139,92,246,.12)!important;filter:saturate(1.15);transition:background .35s ease,box-shadow .35s ease,transform .2s ease!important}
+.launch:not(:disabled):before{display:none!important}
+.launch:hover:not(:disabled){background:#7c3aed!important;color:#fff!important;box-shadow:0 0 24px rgba(139,92,246,.5),0 0 48px rgba(139,92,246,.18)!important;transform:translateY(-2px)!important}
+.launch:disabled{background:#4c3d68!important;color:#bfb5d0!important;box-shadow:none!important;border-color:#5b4b77!important}
+html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:#7041d8!important;color:#fff!important;border-color:#8259df!important;box-shadow:0 0 18px rgba(112,65,216,.28),0 0 38px rgba(112,65,216,.1)!important}
+html[data-theme="light"] .launch:hover:not(:disabled){background:#5f35bd!important;color:#fff!important;box-shadow:0 0 25px rgba(112,65,216,.42),0 0 45px rgba(112,65,216,.15)!important}
