@@ -13,7 +13,12 @@ function ClaimCard({finding,sources}){const linked=(finding.source_ids||[]).map(
 export default function Home(){
  const [question,setQuestion]=useState(""),[events,setEvents]=useState([]),[result,setResult]=useState(null),[running,setRunning]=useState(false),[error,setError]=useState(""),[sources,setSources]=useState(0),[conflicts,setConflicts]=useState(0),[theme,setTheme]=useState("dark");
  useEffect(()=>{const saved=localStorage.getItem("scoutai-theme")||"dark";setTheme(saved);document.documentElement.dataset.theme=saved},[]);
- function changeTheme(next){setTheme(next);localStorage.setItem("scoutai-theme",next);document.documentElement.dataset.theme=next}
+ function changeTheme(next){
+ const root=document.documentElement;
+ root.classList.add("theme-transition");
+ setTheme(next);localStorage.setItem("scoutai-theme",next);root.dataset.theme=next;
+ window.setTimeout(()=>root.classList.remove("theme-transition"),850);
+}
  const active=useMemo(()=>{let n=-1;events.forEach(e=>{const i=stages.findIndex(s=>s[0]===e.type);if(i>=0)n=Math.max(n,i)});return n},[events]);
  async function launch(){
   if(!question.trim()||running)return;setRunning(true);setEvents([]);setResult(null);setError("");setSources(0);setConflicts(0);
