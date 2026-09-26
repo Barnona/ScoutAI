@@ -13,6 +13,7 @@ from app.research.evidence import build_sources, compact_evidence
 from app.research.verifier import verification_prompt
 from app.research.contradiction import contradiction_prompt
 from app.tools.search import web_search
+from app.research.events import ResearchEvent
 
 
 class ScoutAIResearchAgent:
@@ -190,24 +191,36 @@ Rules:
 """
         return self._generate(prompt)
 
-    def research(self, question: str) -> str:
+    def research(self, question: str, emit=None) -> str:
         plan = self._plan(question)
+        if emit:
+            asyncio.run(emit(ResearchEvent("planning_complete", "Research plan created", {"tasks": len(plan.tasks)}).as_dict()))
         queries = [task.question for task in plan.tasks][:MAX_SEARCHES]
         if not queries:
             raise RuntimeError("ScoutAI could not create a research plan.")
 
+        if emit:
+            asyncio.run(emit(ResearchEvent("searching", "Searching the web", {"queries": queries}).as_dict()))
         raw = asyncio.run(self._search_parallel(queries))
         sources = build_sources(raw)[:MAX_SOURCES]
+        if emit:
+            asyncio.run(emit(ResearchEvent("sources_found", "Sources collected", {"count": len(sources)}).as_dict()))
         if not sources:
             raise RuntimeError("ScoutAI found no web sources.")
 
+        if emit:
+            asyncio.run(emit(ResearchEvent("verifying", "Extracting and verifying claims").as_dict()))
         verified = self._verify(sources, question)
         contradictions = self._contradictions(sources)
+        if emit:
+            asyncio.run(emit(ResearchEvent("contradictions", "Contradiction analysis complete", {"count": len(contradictions)}).as_dict()))
 
         # Autonomous verification loop: unresolved claims/conflicts trigger
         # targeted searches, followed by another verification pass.
         for _ in range(MAX_VERIFICATION_ROUNDS):
             followups = self._followup_queries(question, verified, contradictions)
+            if emit and followups:
+                asyncio.run(emit(ResearchEvent("followup_search", "Running targeted follow-up searches", {"queries": followups}).as_dict()))
             if not followups:
                 break
             extra_raw = asyncio.run(self._search_parallel(followups))
@@ -222,6 +235,8 @@ Rules:
             verified = self._verify(sources, question)
             contradictions = self._contradictions(sources)
 
+        if emit:
+            asyncio.run(emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict()))
         result = ResearchResult(
             question=question,
             plan=plan,
@@ -246,8 +261,13 @@ Rules:
                 output.append(item)
         return output
 
-    async def run(self, question: str) -> str:
-        return await asyncio.to_thread(self.research, question)
+    async def run(self, question: str, emit=None) -> str:
+        if emit is None:
+            return await asyncio.to_thread(self.research, question)
+        async def wrapped():
+            await emit(ResearchEvent("planning", "Planning research tasks").as_dict())
+            return await asyncio.to_thread(self.research, question, emit)
+        return await wrapped()
 
 
 research_agent = ScoutAIResearchAgent()
