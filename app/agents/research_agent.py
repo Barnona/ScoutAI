@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from typing import Any
 
 from google import genai
@@ -31,14 +32,24 @@ class ScoutAIResearchAgent:
         self.model = GEMMA_MODEL
 
     def _generate(self, prompt: str) -> str:
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
-        text = getattr(response, "text", None)
-        if not text:
-            raise RuntimeError("Gemma returned an empty response.")
-        return text.strip()
+        last_error = None
+        for attempt in range(3):
+            try:
+                response = self.client.models.generate_content(
+                    model=self.model,
+                    contents=prompt,
+                )
+                text = getattr(response, "text", None)
+                if not text:
+                    raise RuntimeError("Gemma returned an empty response.")
+                return text.strip()
+            except Exception as exc:
+                last_error = exc
+                if attempt < 2:
+                    time.sleep(1.5 * (attempt + 1))
+        raise RuntimeError(
+            f"Gemma request failed after 3 attempts ({self.model}): {last_error}"
+        ) from last_error
 
     @staticmethod
     def _json(text: str) -> dict[str, Any]:
