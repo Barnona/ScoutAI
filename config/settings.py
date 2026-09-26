@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-GEMMA_MODEL = os.getenv("GEMMA_MODEL", "gemma-3-27b-it")
+GEMMA_MODEL = os.getenv("GEMMA_MODEL", "gemma-4-31b-it")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES", "5"))
