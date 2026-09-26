@@ -46,3 +46,13 @@ html[data-theme="light"] .brandMark{background:radial-gradient(circle,rgba(23,10
 :root[data-theme="light"] .brandName{color:#182236}:root[data-theme="light"] .brandName span{color:var(--amber)}:root[data-theme="light"] .brandMark b{color:#182236}
 :root[data-theme="light"] .launch{background:#d72e6f;color:#ffffff;box-shadow:0 0 20px rgba(215,46,111,.16)}:root[data-theme="light"] .launch:hover{background:#bd245e;color:#ffffff}
 :root[data-theme="light"] .themeSwitch button.selected{background:var(--cyan);color:#ffffff}
+
+/* Theme-aware solid launch button */
+:root{--launch-bg:#ff3f82;--launch-hover:#e52f70;--launch-text:#ffffff}
+.launch,.launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 24px rgba(255,63,130,.18)}
+.launch:hover:not(:disabled){background:var(--launch-hover);color:var(--launch-text);box-shadow:0 0 30px rgba(255,63,130,.28)}
+.launch:disabled{background:#7f4057;color:#d8c7cd}
+:root[data-theme="light"]{--launch-bg:#b51f59;--launch-hover:#951746;--launch-text:#ffffff}
+html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:var(--launch-bg);color:var(--launch-text);box-shadow:0 0 20px rgba(181,31,89,.16)}
+html[data-theme="light"] .launch:hover:not(:disabled){background:var(--launch-hover);color:var(--launch-text)}
+html[data-theme="light"] .launch:disabled{background:#d5a1b4;color:#fff}
