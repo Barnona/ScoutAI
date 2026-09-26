@@ -151,7 +151,7 @@ SOURCES:
             if isinstance(q, str) and q.strip()
         ][:MAX_FOLLOWUP_SEARCHES]
 
-    def _synthesize(self, question, plan, sources, verified, contradictions) -> str:
+    def _synthesize(self, question, plan, sources, verified, contradictions) -> dict[str, Any]:
         verification_text = "\n".join(
             f"- {v.status.upper()}: {v.claim} [{', '.join(v.source_ids)}] — {v.reasoning}"
             for v in verified
@@ -162,7 +162,7 @@ SOURCES:
             for c in contradictions
         ) or "No material contradictions detected."
 
-        prompt = f"""You are ScoutAI's final research synthesizer.
+        prompt = f"""You are ScoutAI's final intelligence synthesizer.
 
 QUESTION:
 {question}
@@ -179,24 +179,38 @@ VERIFIED CLAIMS:
 CONTRADICTIONS:
 {conflict_text}
 
-Write a rigorous report with:
-# Executive Summary
-# Research Objective
-# Key Findings
-# Evidence & Verification
-# Conflicting Information / Uncertainty
-# Limitations
-# Sources
+Return ONLY valid JSON:
+{{
+  "executive_summary": "2-4 sentence evidence-based synthesis",
+  "key_findings": [
+    {{"claim":"...", "confidence":"high|medium|low", "status":"supported|mixed|unsupported", "source_ids":["S1"], "reasoning":"..."}}
+  ],
+  "limitations": ["..."],
+  "overall_confidence": "high|medium|low"
+}}
 
 Rules:
 - Use only supplied evidence.
-- Never invent facts or citations.
-- Cite sources as [S1], [S2], etc.
-- Clearly distinguish supported, mixed, and unsupported claims.
-- Explicitly preserve genuine source disagreements.
+- Never invent facts, sources, URLs, or citations.
+- Keep source IDs exactly as supplied.
+- Confidence means strength of available evidence, not certainty.
+- Preserve genuine source disagreements.
 - If evidence is insufficient, say so.
 """
-        return self._generate(prompt)
+        try:
+            data = self._json(self._generate(prompt))
+        except Exception:
+            data = {
+                "executive_summary": "Structured synthesis failed; inspect the verified claims and evidence below.",
+                "key_findings": [],
+                "limitations": ["The final structured synthesis could not be generated."],
+                "overall_confidence": "low",
+            }
+        data.setdefault("executive_summary", "")
+        data.setdefault("key_findings", [])
+        data.setdefault("limitations", [])
+        data.setdefault("overall_confidence", "low")
+        return data
 
     def research(self, question: str, emit=None) -> dict[str, Any]:
         plan = self._plan(question)
@@ -244,15 +258,16 @@ Rules:
 
         if emit:
             emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict())
+        synthesis = self._synthesize(question, plan, sources, verified, contradictions)
         result = ResearchResult(
             question=question,
             plan=plan,
             sources=sources,
             verified_claims=verified,
             contradictions=contradictions,
-            report=self._synthesize(question, plan, sources, verified, contradictions),
+            report=synthesis.get("executive_summary", ""),
         )
-        return result.model_dump()
+        return {**result.model_dump(), "synthesis": synthesis}
 
     async def _search_parallel(self, queries: list[str]) -> list[dict]:
         batches = await asyncio.gather(*(self._search_one(q) for q in queries))
