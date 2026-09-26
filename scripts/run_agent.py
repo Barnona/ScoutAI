@@ -8,7 +8,7 @@ async def main() -> None:
     if not question:
         raise SystemExit("Please provide a research question.")
 
-    print("\nScoutAI is researching with Gemma 3 + SerpApi...\n")
+    print("\nScoutAI is researching with Gemma + SerpApi...\n")
 
     try:
         report = await run_research(question)
