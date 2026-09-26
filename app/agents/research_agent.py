@@ -1,4 +1,4 @@
-"""ScoutAI research agent powered by Google's GenAI SDK + Gemma."""
+"""ScoutAI multi-stage research agent powered by Gemma + SerpApi."""
 
 import asyncio
 import json
@@ -6,8 +6,12 @@ from typing import Any
 
 from google import genai
 
-from config.settings import GEMINI_API_KEY, GEMMA_MODEL, MAX_SEARCHES
-from app.agents.prompts import RESEARCH_AGENT_INSTRUCTIONS
+from config.settings import GEMINI_API_KEY, GEMMA_MODEL, MAX_SEARCHES, MAX_SOURCES
+from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
+from app.research.planner import parse_plan
+from app.research.evidence import build_sources, compact_evidence
+from app.research.verifier import verification_prompt
+from app.research.contradiction import contradiction_prompt
 from app.tools.search import web_search
 
 
@@ -29,123 +33,167 @@ class ScoutAIResearchAgent:
         return text.strip()
 
     @staticmethod
-    def _extract_json(text: str) -> dict[str, Any]:
+    def _json(text: str) -> dict[str, Any]:
         cleaned = text.strip()
-        if cleaned.startswith("```"):
-            cleaned = cleaned.strip("`").strip()
-            if cleaned.startswith("json"):
-                cleaned = cleaned[4:].strip()
-
-        start = cleaned.find("{")
-        end = cleaned.rfind("}")
-        if start == -1 or end <= start:
+        start, end = cleaned.find("{"), cleaned.rfind("}")
+        if start < 0 or end <= start:
             raise ValueError("Gemma did not return a JSON object.")
-
         return json.loads(cleaned[start:end + 1])
 
-    def _plan(self, question: str) -> list[str]:
-        prompt = f"""
-{RESEARCH_AGENT_INSTRUCTIONS}
+    def _plan(self, question: str) -> ResearchPlan:
+        prompt = f"""You are ScoutAI's research planner.
 
-Create a concise research plan for the user's question.
-
+Break the user's broad question into independent research tasks.
 Return ONLY valid JSON:
-{{
-  "queries": [
-    "search query 1",
-    "search query 2"
-  ]
-}}
+{{"tasks":[{{"question":"...","reason":"..."}}]}}
 
 Rules:
-- Generate 2 to {MAX_SEARCHES} distinct queries.
-- Cover different aspects of the question.
-- Prefer queries that find primary, official, technical, or academic sources.
-- Do not answer the question yet.
+- Generate 2 to {MAX_SEARCHES} tasks.
+- Each task must investigate a different aspect.
+- Prefer primary, official, academic, technical, or high-quality reporting sources.
+- Do not answer the question.
 
 USER QUESTION:
 {question}
 """
-        data = self._extract_json(self._generate(prompt))
-        queries = data.get("queries", [])
+        return parse_plan(self._generate(prompt), question, MAX_SEARCHES)
 
-        if not isinstance(queries, list):
-            raise ValueError("Invalid research plan returned by Gemma.")
+    async def _search_one(self, query: str) -> list[dict]:
+        try:
+            return await asyncio.to_thread(web_search, query)
+        except Exception as exc:
+            return [{
+                "title": f"Search error: {query}",
+                "url": "",
+                "snippet": str(exc),
+                "source": "SerpApi",
+            }]
 
+    def _verify(self, sources, question: str) -> list[VerifiedClaim]:
+        extraction_prompt = f"""Extract the most important factual claims needed to answer:
+{question}
+
+Use ONLY the supplied source snippets. Return ONLY JSON:
+{{"claims":["claim 1","claim 2"]}}
+
+SOURCES:
+{compact_evidence(sources)}
+"""
+        data = self._json(self._generate(extraction_prompt))
+        claims = [x for x in data.get("claims", []) if isinstance(x, str)][:20]
+        if not claims:
+            return []
+
+        verified = self._json(self._generate(verification_prompt(claims, sources)))
         return [
-            q.strip() for q in queries
-            if isinstance(q, str) and q.strip()
-        ][:MAX_SEARCHES]
+            VerifiedClaim(
+                claim=item.get("claim", ""),
+                status=item.get("status", "unverified"),
+                source_ids=item.get("source_ids", []),
+                reasoning=item.get("reasoning", ""),
+            )
+            for item in verified.get("claims", [])
+            if isinstance(item, dict) and item.get("claim")
+        ]
+
+    def _contradictions(self, sources) -> list[Contradiction]:
+        data = self._json(self._generate(contradiction_prompt(sources)))
+        return [
+            Contradiction(
+                topic=item.get("topic", ""),
+                claim_a=item.get("claim_a", ""),
+                claim_b=item.get("claim_b", ""),
+                source_a=item.get("source_a", []),
+                source_b=item.get("source_b", []),
+                explanation=item.get("explanation", ""),
+            )
+            for item in data.get("contradictions", [])
+            if isinstance(item, dict) and item.get("claim_a") and item.get("claim_b")
+        ]
+
+    def _synthesize(self, question, plan, sources, verified, contradictions) -> str:
+        verification_text = "\n".join(
+            f"- {v.status.upper()}: {v.claim} [{', '.join(v.source_ids)}] — {v.reasoning}"
+            for v in verified
+        )
+        conflict_text = "\n".join(
+            f"- {c.topic}: {c.claim_a} ({', '.join(c.source_a)}) VS "
+            f"{c.claim_b} ({', '.join(c.source_b)}). {c.explanation}"
+            for c in contradictions
+        ) or "No material contradictions detected."
+
+        prompt = f"""You are ScoutAI's final research synthesizer.
+
+QUESTION:
+{question}
+
+RESEARCH PLAN:
+{plan.model_dump_json(indent=2)}
+
+SOURCE EVIDENCE:
+{compact_evidence(sources)}
+
+VERIFIED CLAIMS:
+{verification_text}
+
+CONTRADICTIONS:
+{conflict_text}
+
+Write a rigorous report with:
+# Executive Summary
+# Research Objective
+# Key Findings
+# Evidence & Verification
+# Conflicting Information / Uncertainty
+# Limitations
+# Sources
+
+Rules:
+- Use only supplied evidence.
+- Never invent facts or citations.
+- Cite sources as [S1], [S2], etc.
+- Clearly distinguish supported, mixed, and unsupported claims.
+- Explicitly preserve genuine source disagreements.
+- If evidence is insufficient, say so.
+"""
+        return self._generate(prompt)
 
     def research(self, question: str) -> str:
-        queries = self._plan(question)
-
+        plan = self._plan(question)
+        queries = [task.question for task in plan.tasks][:MAX_SEARCHES]
         if not queries:
-            return "ScoutAI could not create a research plan."
+            raise RuntimeError("ScoutAI could not create a research plan.")
 
-        all_sources = []
-        seen_urls = set()
+        raw = asyncio.run(self._search_parallel(queries))
+        sources = build_sources(raw)[:MAX_SOURCES]
+        if not sources:
+            raise RuntimeError("ScoutAI found no web sources.")
 
-        for query in queries:
-            try:
-                results = web_search(query)
-            except Exception as exc:
-                all_sources.append({
-                    "title": f"Search error for: {query}",
-                    "url": "",
-                    "snippet": str(exc),
-                    "source": "SerpApi",
-                })
-                continue
+        verified = self._verify(sources, question)
+        contradictions = self._contradictions(sources)
+        result = ResearchResult(
+            question=question,
+            plan=plan,
+            sources=sources,
+            verified_claims=verified,
+            contradictions=contradictions,
+            report=self._synthesize(question, plan, sources, verified, contradictions),
+        )
+        return result.report
 
-            for item in results:
+    async def _search_parallel(self, queries: list[str]) -> list[dict]:
+        batches = await asyncio.gather(*(self._search_one(q) for q in queries))
+        output = []
+        seen = set()
+        for batch in batches:
+            for item in batch:
                 url = item.get("url", "")
-                if url and url in seen_urls:
+                if url and url in seen:
                     continue
                 if url:
-                    seen_urls.add(url)
-                all_sources.append(item)
-
-        evidence = "\n\n".join(
-            f"SOURCE {i + 1}\n"
-            f"Title: {item.get('title', '')}\n"
-            f"URL: {item.get('url', '')}\n"
-            f"Snippet: {item.get('snippet', '')}\n"
-            f"Publisher: {item.get('source', '')}"
-            for i, item in enumerate(all_sources)
-        )
-
-        synthesis_prompt = f"""
-{RESEARCH_AGENT_INSTRUCTIONS}
-
-You are now in the SYNTHESIS stage.
-
-USER QUESTION:
-{question}
-
-RESEARCH QUERIES:
-{json.dumps(queries, ensure_ascii=False, indent=2)}
-
-WEB EVIDENCE:
-{evidence}
-
-Produce an evidence-based research report with exactly these sections:
-1. Executive Summary
-2. Key Findings
-3. Evidence
-4. Conflicting Information / Uncertainty
-5. Limitations
-6. Sources
-
-Rules:
-- Use only information supported by the supplied evidence.
-- Never invent facts, specifications, prices, dates, or citations.
-- Distinguish facts from claims and estimates.
-- If sources disagree, explicitly describe the disagreement.
-- Cite sources as [S1], [S2], etc., matching the source numbers above.
-- If evidence is weak, say so.
-"""
-        return self._generate(synthesis_prompt)
+                    seen.add(url)
+                output.append(item)
+        return output
 
     async def run(self, question: str) -> str:
         return await asyncio.to_thread(self.research, question)
