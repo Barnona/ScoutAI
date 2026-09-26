@@ -9,6 +9,8 @@ SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES", "5"))
 MAX_SOURCES = int(os.getenv("MAX_SOURCES", "12"))
+MAX_VERIFICATION_ROUNDS = int(os.getenv("MAX_VERIFICATION_ROUNDS", "2"))
+MAX_FOLLOWUP_SEARCHES = int(os.getenv("MAX_FOLLOWUP_SEARCHES", "4"))
 
 
 def validate_environment() -> None:
