@@ -78,3 +78,12 @@ html[data-theme="light"] .launch:hover:not(:disabled){background:#5f35bd!importa
 .launch:hover:not(:disabled),.launch:focus-visible:not(:disabled){background:#8b5cf6!important;color:#fff!important;border-color:#8b5cf6!important;box-shadow:none!important;transform:none!important}
 .launch:disabled{background:#8b5cf6!important;color:#fff!important;border-color:#8b5cf6!important;opacity:.55;box-shadow:none!important}
 html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled),html[data-theme="light"] .launch:hover:not(:disabled),html[data-theme="light"] .launch:focus-visible:not(:disabled),html[data-theme="light"] .launch:disabled{background:#7041d8!important;color:#fff!important;border-color:#7041d8!important}
+
+
+/* Final launch button palette: violet -> scarlet */
+.launch,.launch:not(:disabled){background:#8b5cf6!important;color:#ffffff!important;border-color:#8b5cf6!important;box-shadow:none!important;filter:none!important;opacity:1}
+.launch:hover:not(:disabled),.launch:focus-visible:not(:disabled){background:#ff365f!important;color:#ffffff!important;border-color:#ff365f!important;box-shadow:none!important;transform:none!important}
+.launch:disabled{background:#8b5cf6!important;color:#ffffff!important;border-color:#8b5cf6!important;opacity:.55;box-shadow:none!important}
+html[data-theme="light"] .launch,html[data-theme="light"] .launch:not(:disabled){background:#7041d8!important;color:#ffffff!important;border-color:#7041d8!important}
+html[data-theme="light"] .launch:hover:not(:disabled),html[data-theme="light"] .launch:focus-visible:not(:disabled){background:#c51f48!important;color:#ffffff!important;border-color:#c51f48!important}
+html[data-theme="light"] .launch:disabled{background:#7041d8!important;color:#ffffff!important;border-color:#7041d8!important}
