@@ -8,3 +8,10 @@ class ResearchRequest(BaseModel):
 class ResearchResponse(BaseModel):
     question: str
     report: str
+
+
+class ResearchEventResponse(BaseModel):
+    type: str
+    message: str
+    data: dict = {}
+    timestamp: str
