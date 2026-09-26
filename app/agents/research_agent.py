@@ -207,27 +207,27 @@ Rules:
             raise RuntimeError("ScoutAI could not create a research plan.")
 
         if emit:
-            emit(ResearchEvent("searching", "Searching the web", {"queries": queries}).as_dict()))
+            emit(ResearchEvent("searching", "Searching the web", {"queries": queries}).as_dict())
         raw = asyncio.run(self._search_parallel(queries))
         sources = build_sources(raw)[:MAX_SOURCES]
         if emit:
-            emit(ResearchEvent("sources_found", "Sources collected", {"count": len(sources)}).as_dict()))
+            emit(ResearchEvent("sources_found", "Sources collected", {"count": len(sources)}).as_dict())
         if not sources:
             raise RuntimeError("ScoutAI found no web sources.")
 
         if emit:
-            emit(ResearchEvent("verifying", "Extracting and verifying claims").as_dict()))
+            emit(ResearchEvent("verifying", "Extracting and verifying claims").as_dict())
         verified = self._verify(sources, question)
         contradictions = self._contradictions(sources)
         if emit:
-            emit(ResearchEvent("contradictions", "Contradiction analysis complete", {"count": len(contradictions)}).as_dict()))
+            emit(ResearchEvent("contradictions", "Contradiction analysis complete", {"count": len(contradictions)}).as_dict())
 
         # Autonomous verification loop: unresolved claims/conflicts trigger
         # targeted searches, followed by another verification pass.
         for _ in range(MAX_VERIFICATION_ROUNDS):
             followups = self._followup_queries(question, verified, contradictions)
             if emit and followups:
-                emit(ResearchEvent("followup_search", "Running targeted follow-up searches", {"queries": followups}).as_dict()))
+                emit(ResearchEvent("followup_search", "Running targeted follow-up searches", {"queries": followups}).as_dict())
             if not followups:
                 break
             extra_raw = asyncio.run(self._search_parallel(followups))
@@ -243,7 +243,7 @@ Rules:
             contradictions = self._contradictions(sources)
 
         if emit:
-            emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict()))
+            emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict())
         result = ResearchResult(
             question=question,
             plan=plan,
@@ -269,17 +269,14 @@ Rules:
         return output
 
     async def run(self, question: str, emit=None) -> dict[str, Any]:
-        if emit is None:
-            return await asyncio.to_thread(self.research, question)
-        async def wrapped():
+        if emit:
             emit(ResearchEvent("planning", "Planning research tasks").as_dict())
-            return await asyncio.to_thread(self.research, question, emit)
-        return await wrapped()
+        return await asyncio.to_thread(self.research, question, emit)
 
 
 research_agent = ScoutAIResearchAgent()
 
 
-async def run_research(question: str, emit=None) -> str:
+async def run_research(question: str, emit=None) -> dict[str, Any]:
     """Run a research mission, optionally streaming progress events."""
     return await research_agent.run(question, emit=emit)
