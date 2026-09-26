@@ -7,7 +7,7 @@ class ResearchRequest(BaseModel):
 
 class ResearchResponse(BaseModel):
     question: str
-    report: str
+    report: dict
 
 
 class ResearchEventResponse(BaseModel):
