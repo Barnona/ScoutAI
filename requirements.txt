@@ -1,0 +1,10 @@
+google-genai
+serpapi
+python-dotenv
+pydantic
+fastapi
+uvicorn[standard]
+faiss-cpu
+numpy
+pytest
+httpx
