@@ -6,7 +6,14 @@ from typing import Any
 
 from google import genai
 
-from config.settings import (GEMINI_API_KEY, GEMMA_MODEL, MAX_SEARCHES, MAX_SOURCES,\n    MAX_VERIFICATION_ROUNDS, MAX_FOLLOWUP_SEARCHES,)
+from config.settings import (
+    GEMINI_API_KEY,
+    GEMMA_MODEL,
+    MAX_SEARCHES,
+    MAX_SOURCES,
+    MAX_VERIFICATION_ROUNDS,
+    MAX_FOLLOWUP_SEARCHES,
+)
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
 from app.research.planner import parse_plan
 from app.research.evidence import build_sources, compact_evidence
