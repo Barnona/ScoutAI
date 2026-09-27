@@ -10,6 +10,20 @@ Plan → Search → Verify → Challenge → Synthesize
 
 It combines Gemma for reasoning and synthesis with SerpApi for live web retrieval, then exposes the research process through a FastAPI backend and a responsive Next.js console.
 
+## Screenshots
+
+### Research Console — Dark
+![ScoutAI Research Console — Dark](./docs/screenshots/home-dark.png)
+
+### Research Console — Light
+![ScoutAI Research Console — Light](./docs/screenshots/home-light.png)
+
+### Intelligence Brief — Dark
+![ScoutAI Intelligence Brief — Dark](./docs/screenshots/report-dark.png)
+
+### Intelligence Brief — Light
+![ScoutAI Intelligence Brief — Light](./docs/screenshots/report-light.png)
+
 ## Features
 
 - **Autonomous research planning** — breaks a question into searchable research tasks.
