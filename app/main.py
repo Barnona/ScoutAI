@@ -14,7 +14,7 @@ frontend_origins = [
     origin.strip()
     for origin in os.getenv(
         "FRONTEND_ORIGINS",
-        "http://localhost:3000,http://127.0.0.1:3000,http://10.55.184.161:3000",
+        "http://localhost:3000,http://127.0.0.1:3000,http://10.71.162.161:3000",
     ).split(",")
     if origin.strip()
 ]
