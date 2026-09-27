@@ -29,7 +29,7 @@ async def research_stream(request: ResearchRequest) -> StreamingResponse:
         def emit(event: dict):
             loop.call_soon_threadsafe(queue.put_nowait, event)
 
-        task = asyncio.create_task(run_research(request.question, emit=emit))
+        task = asyncio.create_task(run_research(request.question, emit=emit, depth=request.depth))
 
         try:
             while True:
