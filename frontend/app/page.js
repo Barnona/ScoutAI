@@ -13,12 +13,7 @@ function ClaimCard({finding,sources}){const linked=(finding.source_ids||[]).map(
 export default function Home(){
  const [question,setQuestion]=useState(""),[events,setEvents]=useState([]),[result,setResult]=useState(null),[running,setRunning]=useState(false),[error,setError]=useState(""),[sources,setSources]=useState(0),[conflicts,setConflicts]=useState(0),[theme,setTheme]=useState("dark");
  useEffect(()=>{const saved=localStorage.getItem("scoutai-theme")||"dark";setTheme(saved);document.documentElement.dataset.theme=saved},[]);
- function changeTheme(next){
- const root=document.documentElement;
- root.classList.add("theme-transition");
- setTheme(next);localStorage.setItem("scoutai-theme",next);root.dataset.theme=next;
- window.setTimeout(()=>root.classList.remove("theme-transition"),850);
-}
+ function changeTheme(next){setTheme(next);localStorage.setItem("scoutai-theme",next);document.documentElement.dataset.theme=next}
  const active=useMemo(()=>{let n=-1;events.forEach(e=>{const i=stages.findIndex(s=>s[0]===e.type);if(i>=0)n=Math.max(n,i)});return n},[events]);
  async function launch(){
   if(!question.trim()||running)return;setRunning(true);setEvents([]);setResult(null);setError("");setSources(0);setConflicts(0);
@@ -27,7 +22,7 @@ export default function Home(){
  }
  const synthesis=result?.synthesis||{},findings=synthesis.key_findings||[],sourceList=result?.sources||[];
  return <main className={"shell "+(running?"mission-active":"")}><div className="scanline"/>
-  <header className="topbar"><div className="brand"><div className="brandMark" aria-label="ScoutAI radar emblem"><span className="radarSweep"/><span className="radarArc arcOne"/><span className="radarArc arcTwo"/><b>S</b></div><div><div className="brandName">SC<span>OUT</span>AI</div><div className="brandSub">AUTONOMOUS RESEARCH COMMAND</div></div></div><div className="topActions"><div className="themeSwitch" role="group" aria-label="Theme selection"><button className={theme==="dark"?"selected":""} onClick={()=>changeTheme("dark")}>☾ DARK</button><button className={theme==="light"?"selected":""} onClick={()=>changeTheme("light")}>☼ LIGHT</button></div><div className="status"><i/> SYSTEM ONLINE <b>v0.4</b></div></div></header>
+  <header className="topbar"><div className="brand"><div className="brandMark">S</div><div><div className="brandName">SCOUT<span>AI</span></div><div className="brandSub">AUTONOMOUS RESEARCH COMMAND</div></div></div><div className="topActions"><div className="themeSwitch" role="group" aria-label="Theme selection"><button className={theme==="dark"?"selected":""} onClick={()=>changeTheme("dark")}>☾ DARK</button><button className={theme==="light"?"selected":""} onClick={()=>changeTheme("light")}>☼ LIGHT</button></div><div className="status"><i/> SYSTEM ONLINE <b>v0.4</b></div></div></header>
   <section className="hero"><div className="eyebrow">◈ INTELLIGENCE CONSOLE / LIVE WEB RESEARCH</div><h1>Deploy a research <em>mission.</em></h1><p>ScoutAI plans, searches, verifies, challenges conflicting evidence, and turns the evidence graph into an interactive intelligence brief.</p>
    <div className="missionBox"><div className="missionHeader"><span>NEW RESEARCH MISSION</span><kbd>CTRL + ENTER</kbd></div><textarea value={question} onChange={e=>setQuestion(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&(e.ctrlKey||e.metaKey))launch()}} placeholder="What do you want ScoutAI to investigate?" disabled={running}/><div className="missionFooter"><div className="presets">{presets.map(p=><button key={p} onClick={()=>setQuestion(p)} disabled={running}>{p.slice(0,30)}…</button>)}</div><button className="launch" onClick={launch} disabled={running||!question.trim()}>{running?"SCOUTING...":"LAUNCH MISSION ↗"}</button></div></div>
   </section>
