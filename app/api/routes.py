@@ -2,10 +2,11 @@ import asyncio
 import json
 
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, Response
 
 from app.agents.research_agent import run_research
 from app.api.models import ResearchRequest, ResearchResponse
+from app.reports.pdf import build_research_pdf
 
 router = APIRouter(prefix="/api", tags=["research"])
 
@@ -52,4 +53,24 @@ async def research_stream(request: ResearchRequest) -> StreamingResponse:
         event_stream(),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+@router.post("/research/pdf")
+async def research_pdf(payload: dict) -> Response:
+    report = payload.get("report")
+    depth = payload.get("depth", "standard")
+
+    if not isinstance(report, dict):
+        raise HTTPException(status_code=400, detail="A completed research report is required.")
+
+    try:
+        pdf = await asyncio.to_thread(build_research_pdf, report, depth)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {exc}") from exc
+
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": 'attachment; filename="scoutai-research-report.pdf"'},
     )
