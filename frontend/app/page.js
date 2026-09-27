@@ -20,10 +20,7 @@ async function exportPdf(){if(!result||exporting)return;setExporting(true);setEr
  async function launch(){
   if(!question.trim()||running)return;setRunning(true);setEvents([]);setResult(null);setError("");setSources(0);setConflicts(0);
   try{const res=await fetch(API+"/api/research/stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:question.trim(),depth})});if(!res.ok||!res.body)throw new Error("ScoutAI API returned HTTP "+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer="";
-   while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const packets=buffer.split("
-
-");buffer=packets.pop()||"";for(const packet of packets){const line=packet.split("
-").find(x=>x.startsWith("data: "));if(!line)continue;const e=JSON.parse(line.slice(6));setEvents(x=>[...x,e]);if(e.type==="sources_found")setSources(e.data?.count||0);if(e.type==="contradictions")setConflicts(e.data?.count||0);if(e.type==="complete")setResult(e.data?.result||null);if(e.type==="error")setError(e.message||"Research failed.")}}}catch(e){setError(e.message||"Unable to connect to ScoutAI.")}finally{setRunning(false)}
+   while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const packets=buffer.split("\n\n");buffer=packets.pop()||"";for(const packet of packets){const line=packet.split("\n").find(x=>x.startsWith("data: "));if(!line)continue;const e=JSON.parse(line.slice(6));setEvents(x=>[...x,e]);if(e.type==="sources_found")setSources(e.data?.count||0);if(e.type==="contradictions")setConflicts(e.data?.count||0);if(e.type==="complete")setResult(e.data?.result||null);if(e.type==="error")setError(e.message||"Research failed.")}}}catch(e){setError(e.message||"Unable to connect to ScoutAI.")}finally{setRunning(false)}
  }
  const synthesis=result?.synthesis||{},findings=synthesis.key_findings||[],sourceList=result?.sources||[];
  return <main className={"shell "+(running?"mission-active":"")}><div className="scanline"/>
