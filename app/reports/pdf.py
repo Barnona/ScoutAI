@@ -2,6 +2,7 @@
 
 from io import BytesIO
 from xml.sax.saxutils import escape
+import re
 
 from reportlab.lib import colors
 from reportlab.lib.enums import TA_CENTER
@@ -20,7 +21,10 @@ from reportlab.platypus import (
 
 
 def _text(value) -> str:
-    return escape(str(value or ""))
+    text = str(value or "")
+    text = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", " ", text)
+    text = text.encode("latin-1", errors="replace").decode("latin-1")
+    return escape(text)
 
 
 def _bullet(text: str) -> Paragraph:
