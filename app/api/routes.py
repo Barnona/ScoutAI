@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api", tags=["research"])
 @router.post("/research", response_model=ResearchResponse)
 async def research(request: ResearchRequest) -> ResearchResponse:
     try:
-        report = await run_research(request.question)
+        report = await run_research(request.question, depth=request.depth)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
