@@ -29,9 +29,9 @@
   .missionHeader{padding:11px 12px;font-size:8px}
   .missionHeader kbd{display:none}
   textarea{min-height:145px;padding:15px 13px;font-size:17px;line-height:1.4}
-  .depthPicker{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:10px}
-  .depthPicker>span{grid-column:1/-1;width:auto;margin:0 0 2px}
-  .depthPicker button{width:100%;padding:10px 5px;font-size:8px}
+  .depthPicker{gap:5px;padding:9px 10px;overflow-x:auto;flex-wrap:nowrap}
+  .depthPicker>span{flex:none;width:auto;margin-right:4px}
+  .depthPicker button{flex:none;width:auto;padding:7px 9px;font-size:8px}
   .missionFooter{padding:10px;gap:10px}
   .presets{display:grid;grid-template-columns:1fr;gap:6px;width:100%;overflow:visible}
   .presets button{width:100%;overflow:hidden;text-overflow:ellipsis;padding:9px 10px;text-align:left}
@@ -96,3 +96,19 @@
   .stats strong{font-size:15px}
   .reportHeader h2{font-size:29px}
 }
+.depthPicker{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid var(--line);background:rgba(127,150,160,.025);overflow:auto}
+.depthPicker>span{color:var(--muted);font:700 9px Space Mono,monospace;letter-spacing:1px;margin-right:5px;white-space:nowrap}
+.depthPicker button{border:1px solid var(--line);background:transparent;color:var(--muted);padding:7px 10px;font:700 9px Space Mono,monospace;white-space:nowrap}
+.depthPicker button:hover{border-color:#8b5cf6;color:#8b5cf6}
+.depthPicker button.selected{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+.qualityRow{display:flex;justify-content:space-between;align-items:center;margin:-2px 0 9px}
+.qualityRow>b{font:700 9px Space Mono,monospace;color:#81919a}
+.quality{padding:4px 6px;border:1px solid #33444c;font:700 8px Space Mono,monospace;letter-spacing:.5px}
+.quality.high{color:var(--cyan);border-color:rgba(53,246,208,.4)}
+.quality.medium{color:var(--amber);border-color:rgba(255,181,71,.4)}
+.quality.low{color:#ff91a8;border-color:rgba(255,85,119,.4)}
+html[data-theme="light"] .depthPicker{background:rgba(127,150,160,.035)}
+html[data-theme="light"] .depthPicker button:hover{color:#7041d8;border-color:#7041d8}
+html[data-theme="light"] .depthPicker button.selected{background:#7041d8;border-color:#7041d8;color:#fff}
+@media(max-width:700px){.depthPicker{flex-wrap:wrap}}
+
