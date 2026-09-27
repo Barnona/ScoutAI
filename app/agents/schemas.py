@@ -20,6 +20,9 @@ class SourceRecord(BaseModel):
     url: str = ""
     snippet: str = ""
     publisher: str = ""
+    quality_score: int = 0
+    quality_tier: str = "unknown"
+    quality_reasons: list[str] = Field(default_factory=list)
 
 
 class Evidence(BaseModel):
