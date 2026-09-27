@@ -7,7 +7,7 @@ from typing import Any
 
 from google import genai
 
-from config.settings import GEMINI_API_KEY, GEMMA_MODEL, get_research_profile
+from config.settings import GEMINI_API_KEY, GEMMA_MODEL, GEMMA_FALLBACK_MODEL, get_research_profile
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
 from app.research.planner import parse_plan
 from app.research.evidence import build_sources, compact_evidence
@@ -26,22 +26,30 @@ class ScoutAIResearchAgent:
 
     def _generate(self, prompt: str) -> str:
         last_error = None
-        for attempt in range(3):
-            try:
-                response = self.client.models.generate_content(
-                    model=self.model,
-                    contents=prompt,
-                )
-                text = getattr(response, "text", None)
-                if not text:
-                    raise RuntimeError("Gemma returned an empty response.")
-                return text.strip()
-            except Exception as exc:
-                last_error = exc
-                if attempt < 2:
-                    time.sleep(1.5 * (attempt + 1))
+        models = [self.model]
+        if GEMMA_FALLBACK_MODEL and GEMMA_FALLBACK_MODEL != self.model:
+            models.append(GEMMA_FALLBACK_MODEL)
+
+        for model in models:
+            for attempt in range(3):
+                try:
+                    response = self.client.models.generate_content(
+                        model=model,
+                        contents=prompt,
+                    )
+                    text = getattr(response, "text", None)
+                    if not text:
+                        raise RuntimeError("Gemma returned an empty response.")
+                    return text.strip()
+                except Exception as exc:
+                    last_error = exc
+                    if attempt < 2:
+                        # 500s can be transient. Back off progressively rather
+                        # than immediately issuing another request.
+                        time.sleep(2 ** attempt * 2)
+
         raise RuntimeError(
-            f"Gemma request failed after 3 attempts ({self.model}): {last_error}"
+            f"Gemma request failed for {', '.join(models)} after retries: {last_error}"
         ) from last_error
 
     @staticmethod
