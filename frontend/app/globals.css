@@ -18,10 +18,6 @@
 .depthPicker button{border:1px solid var(--line);background:transparent;color:var(--muted);padding:7px 10px;font:700 9px Space Mono,monospace;white-space:nowrap}
 .depthPicker button:hover{border-color:#8b5cf6;color:#8b5cf6}
 .depthPicker button.selected{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
-.launch{border-color:#8b5cf6;background:#8b5cf6;color:#fff;box-shadow:none}
-.launch:hover:not(:disabled){border-color:#ff365f;background:#ff365f;color:#fff;box-shadow:none}
-.launch:focus-visible{outline:2px solid #ff365f;outline-offset:2px}
-.launch:not(:disabled):before{display:none}
 .qualityRow{display:flex;justify-content:space-between;align-items:center;margin:-2px 0 9px}
 .qualityRow>b{font:700 9px Space Mono,monospace;color:#81919a}
 .quality{padding:4px 6px;border:1px solid #33444c;font:700 8px Space Mono,monospace;letter-spacing:.5px}
@@ -31,8 +27,6 @@
 html[data-theme="light"] .depthPicker{background:rgba(127,150,160,.035)}
 html[data-theme="light"] .depthPicker button:hover{color:#7041d8;border-color:#7041d8}
 html[data-theme="light"] .depthPicker button.selected{background:#7041d8;border-color:#7041d8;color:#fff}
-html[data-theme="light"] .launch{background:#7041d8;border-color:#7041d8;color:#fff}
-html[data-theme="light"] .launch:hover:not(:disabled){background:#c51f48;border-color:#c51f48;color:#fff}
 @media(max-width:700px){.depthPicker{flex-wrap:wrap}.depthPicker>span{width:100%}}
 
 @media(max-width:1100px){.stats{grid-template-columns:repeat(2,1fr)}.stats div:nth-child(2){border-right:0}.stats div:nth-child(-n+2){border-bottom:1px solid var(--line)}}
