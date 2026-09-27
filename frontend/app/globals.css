@@ -114,3 +114,28 @@ html[data-theme="light"] .depthPicker button.selected{background:#7041d8;border-
 
 
 @media(max-width:700px){.topActions{display:flex;align-items:center;gap:8px}.themeSwitch{display:flex}.themeSwitch button{padding:6px 7px;font-size:8px}.status{display:none}}
+
+
+/* Prevent grid/flex cards from expanding past the mobile viewport */
+@media(max-width:700px){
+  .consoleGrid,
+  .consoleGrid > *,
+  .tracePanel,
+  .sideStack,
+  .sideStack > *,
+  .stats,
+  .protocol,
+  .stageRail,
+  .eventFeed{
+    min-width:0;
+    max-width:100%;
+  }
+  .stageRail,
+  .eventFeed{
+    width:100%;
+  }
+  .protocolLine{
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+}
