@@ -12,12 +12,21 @@ Return ONLY JSON:
 {{"claims":[{{"claim":"...","status":"supported|mixed|unsupported",
 "source_ids":["S1"],"reasoning":"..."}}]}}
 Do not infer missing facts. Use mixed when sources disagree or only partially support a claim.
+Prefer direct evidence over source reputation when deciding claim status.
 
 CANDIDATE CLAIMS:
 {claims}
 
 SOURCES:
 {evidence}"""
+
+
+def evidence_gaps(verified) -> list[str]:
+    gaps = []
+    for claim in verified:
+        if claim.status in {"mixed", "unsupported", "unverified"}:
+            gaps.append(f"{claim.status}: {claim.claim}")
+    return gaps[:12]
 
 
 def normalize_claim(text: str) -> str:
