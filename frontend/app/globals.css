@@ -20,7 +20,7 @@
   .brandMark{width:30px;height:30px;font-size:14px;flex:none}
   .brandName{font-size:19px}
   .brandSub{font-size:7px;letter-spacing:.7px;white-space:nowrap}
-  .topActions{display:none}
+  .topActions{display:flex;align-items:center;gap:8px}.themeSwitch{display:flex}
   .hero{padding:38px 0 28px}
   .eyebrow{font-size:8px;letter-spacing:.8px;margin-bottom:13px}
   h1{font-size:clamp(38px,12vw,56px);letter-spacing:-2px;line-height:.92}
@@ -112,3 +112,5 @@ html[data-theme="light"] .depthPicker button:hover{color:#7041d8;border-color:#7
 html[data-theme="light"] .depthPicker button.selected{background:#7041d8;border-color:#7041d8;color:#fff}
 @media(max-width:700px){.depthPicker{flex-wrap:wrap}}
 
+
+@media(max-width:700px){.topActions{display:flex;align-items:center;gap:8px}.themeSwitch{display:flex}.themeSwitch button{padding:6px 7px;font-size:8px}.status{display:none}}
