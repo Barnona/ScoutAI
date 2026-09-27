@@ -1,8 +1,8 @@
 # ScoutAI — Autonomous Evidence-Based Research Agent
 
-ScoutAI is a Python-first research agent that plans searches, retrieves current web evidence through SerpApi, cross-checks sources, and produces a structured report.
+ScoutAI is a Python-first research agent that plans searches, retrieves current web evidence through SerpApi, cross-checks sources, challenges unresolved evidence, and produces a structured report.
 
-## v0.2 — Zero-OpenAI MVP
+## v0.3 — Adaptive Research Intelligence
 
 This version uses:
 - Google GenAI SDK
@@ -109,3 +109,21 @@ ScoutAI no longer requires OpenAI API access. Google's Gemini API has a free tie
 If `gemma-3-27b-it` is unavailable for your Google AI Studio project, change `GEMMA_MODEL` to a Gemma model that your API key exposes.
 
 Never commit `.env` or API keys.
+
+
+## Research depth
+
+The API and web console support four evidence budgets:
+
+| Mode | Search tasks | Source cap | Verification rounds | Follow-up queries |
+|---|---:|---:|---:|---:|
+| Quick | 3 | 7 | 1 | 2 |
+| Standard | 5 | 12 | 2 | 4 |
+| Deep | 7 | 18 | 3 | 5 |
+| Investigative | 9 | 24 | 4 | 7 |
+
+The agent can stop a verification round early when no unresolved claims or contradictions require follow-up research.
+
+## Source quality signals
+
+Each normalized source receives a transparent heuristic quality signal based on URL/domain and publisher indicators. The score is surfaced in the console alongside the source rather than being treated as a hidden model judgment. Claim verification still relies on the supplied evidence itself.
