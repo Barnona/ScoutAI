@@ -7,14 +7,7 @@ from typing import Any
 
 from google import genai
 
-from config.settings import (
-    GEMINI_API_KEY,
-    GEMMA_MODEL,
-    MAX_SEARCHES,
-    MAX_SOURCES,
-    MAX_VERIFICATION_ROUNDS,
-    MAX_FOLLOWUP_SEARCHES,
-)
+from config.settings import GEMINI_API_KEY, GEMMA_MODEL, get_research_profile
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
 from app.research.planner import parse_plan
 from app.research.evidence import build_sources, compact_evidence
@@ -59,7 +52,7 @@ class ScoutAIResearchAgent:
             raise ValueError("Gemma did not return a JSON object.")
         return json.loads(cleaned[start:end + 1])
 
-    def _plan(self, question: str) -> ResearchPlan:
+    def _plan(self, question: str, max_searches: int) -> ResearchPlan:
         prompt = f"""You are ScoutAI's research planner.
 
 Break the user's broad question into independent research tasks.
@@ -67,7 +60,7 @@ Return ONLY valid JSON:
 {{"tasks":[{{"question":"...","reason":"..."}}]}}
 
 Rules:
-- Generate 2 to {MAX_SEARCHES} tasks.
+- Generate 2 to {max_searches} tasks.
 - Each task must investigate a different aspect.
 - Prefer primary, official, academic, technical, or high-quality reporting sources.
 - Do not answer the question.
@@ -75,7 +68,7 @@ Rules:
 USER QUESTION:
 {question}
 """
-        return parse_plan(self._generate(prompt), question, MAX_SEARCHES)
+        return parse_plan(self._generate(prompt), question, max_searches)
 
     async def _search_one(self, query: str) -> list[dict]:
         try:
@@ -130,7 +123,7 @@ SOURCES:
             if isinstance(item, dict) and item.get("claim_a") and item.get("claim_b")
         ]
 
-    def _followup_queries(self, question, verified, contradictions) -> list[str]:
+    def _followup_queries(self, question, verified, contradictions, max_followups: int) -> list[str]:
         unresolved = [
             f"Claim: {v.claim}\nStatus: {v.status}\nReason: {v.reasoning}"
             for v in verified if v.status in {"mixed", "unsupported"}
@@ -149,7 +142,7 @@ SOURCES:
             f"UNRESOLVED CLAIMS:\n{chr(10).join(unresolved) or 'None'}\n\n"
             f"CONTRADICTIONS:\n{chr(10).join(conflicts) or 'None'}\n\n"
             f"Return ONLY JSON: {{\"queries\":[\"query 1\",\"query 2\"]}}. "
-            f"Generate at most {MAX_FOLLOWUP_SEARCHES} targeted queries. "
+            f"Generate at most {max_followups} targeted queries. "
             "Prefer primary, official, academic, or technical sources. "
             "Do not answer the claims; only create queries."
         )
@@ -160,7 +153,7 @@ SOURCES:
         return [
             q.strip() for q in data.get("queries", [])
             if isinstance(q, str) and q.strip()
-        ][:MAX_FOLLOWUP_SEARCHES]
+        ][:max_followups]
 
     def _synthesize(self, question, plan, sources, verified, contradictions) -> dict[str, Any]:
         verification_text = "\n".join(
@@ -223,18 +216,19 @@ Rules:
         data.setdefault("overall_confidence", "low")
         return data
 
-    def research(self, question: str, emit=None) -> dict[str, Any]:
-        plan = self._plan(question)
+    def research(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+        profile = get_research_profile(depth)
+        plan = self._plan(question, profile["searches"])
         if emit:
             emit(ResearchEvent("planning_complete", "Research plan created", {"tasks": len(plan.tasks)}).as_dict())
-        queries = [task.question for task in plan.tasks][:MAX_SEARCHES]
+        queries = [task.question for task in plan.tasks][:profile["searches"]]
         if not queries:
             raise RuntimeError("ScoutAI could not create a research plan.")
 
         if emit:
             emit(ResearchEvent("searching", "Searching the web", {"queries": queries}).as_dict())
         raw = asyncio.run(self._search_parallel(queries))
-        sources = build_sources(raw)[:MAX_SOURCES]
+        sources = build_sources(raw)[:profile["sources"]]
         if emit:
             emit(ResearchEvent("sources_found", "Sources collected", {"count": len(sources)}).as_dict())
         if not sources:
@@ -249,8 +243,10 @@ Rules:
 
         # Autonomous verification loop: unresolved claims/conflicts trigger
         # targeted searches, followed by another verification pass.
-        for _ in range(MAX_VERIFICATION_ROUNDS):
-            followups = self._followup_queries(question, verified, contradictions)
+        for round_no in range(profile["rounds"]):
+            followups = self._followup_queries(question, verified, contradictions, profile["followups"])
+            if emit:
+                emit(ResearchEvent("verification_round", f"Verification round {round_no + 1}", {"round": round_no + 1, "gaps": len(followups)}).as_dict())
             if emit and followups:
                 emit(ResearchEvent("followup_search", "Running targeted follow-up searches", {"queries": followups}).as_dict())
             if not followups:
@@ -263,7 +259,7 @@ Rules:
             sources = build_sources([
                 {"title": s.title, "url": s.url, "snippet": s.snippet, "source": s.publisher}
                 for s in sources
-            ] + new_raw)[:MAX_SOURCES]
+            ] + new_raw)[:profile["sources"]]
             verified = self._verify(sources, question)
             contradictions = self._contradictions(sources)
 
@@ -294,15 +290,15 @@ Rules:
                 output.append(item)
         return output
 
-    async def run(self, question: str, emit=None) -> dict[str, Any]:
+    async def run(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
         if emit:
             emit(ResearchEvent("planning", "Planning research tasks").as_dict())
-        return await asyncio.to_thread(self.research, question, emit)
+        return await asyncio.to_thread(self.research, question, emit, depth)
 
 
 research_agent = ScoutAIResearchAgent()
 
 
-async def run_research(question: str, emit=None) -> dict[str, Any]:
+async def run_research(question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
     """Run a research mission, optionally streaming progress events."""
-    return await research_agent.run(question, emit=emit)
+    return await research_agent.run(question, emit=emit, depth=depth)
