@@ -238,7 +238,7 @@ def build_research_pdf(report: dict, depth: str = "standard") -> bytes:
         tier = source.get("quality_tier", "unknown")
         url = source.get("url") or ""
         url_markup = (
-            f'<link href="{escape(url, quote=True)}" color="#008f7a">{_text(url)}</link>'
+            f'<link href="{escape(url)}" color="#008f7a">{_text(url)}</link>'
             if url else "URL unavailable"
         )
         story.append(KeepTogether([
