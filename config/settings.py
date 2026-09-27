@@ -5,6 +5,7 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 GEMMA_MODEL = os.getenv("GEMMA_MODEL", "gemma-4-31b-it")
+GEMMA_FALLBACK_MODEL = os.getenv("GEMMA_FALLBACK_MODEL", "gemma-4-26b-a4b-it")
 SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
 
 MAX_SEARCHES = int(os.getenv("MAX_SEARCHES", "5"))
