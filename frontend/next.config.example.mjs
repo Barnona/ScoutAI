@@ -2,9 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   allowedDevOrigins: [
-    "10.71.162.161",
+    "Client URL",
     "localhost:3000",
-    "127.0.0.1:3000",
+    "Backend URL:3000",
   ],
 };
 
