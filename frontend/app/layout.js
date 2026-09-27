@@ -1,11 +1,11 @@
 import "./globals.css";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
-  ? new URL(process.env.NEXT_PUBLIC_SITE_URL)
-  : undefined;
+const siteUrl = new URL(
+  process.env.NEXT_PUBLIC_SITE_URL || "https://scoutai-nine.vercel.app"
+);
 
 export const metadata = {
-  ...(siteUrl ? { metadataBase: siteUrl } : {}),
+  metadataBase: siteUrl,
   title: {
     default: "ScoutAI // Research Command",
     template: "%s // ScoutAI",
@@ -34,6 +34,7 @@ export const metadata = {
       "Autonomous research that plans, searches, verifies, challenges, and synthesizes evidence.",
     type: "website",
     siteName: "ScoutAI",
+    url: siteUrl.toString(),
   },
   twitter: {
     card: "summary",
