@@ -28,6 +28,8 @@ class AttachmentContext:
     kind: str
     text: str
     size: int
+    data: bytes = b""
+    mime_type: str = ""
 
 
 def _trim(text: str) -> str:
@@ -107,7 +109,8 @@ def extract_attachment(filename: str, data: bytes) -> AttachmentContext:
     else:
         text, kind = "", "FILE"
 
-    return AttachmentContext(filename=filename, kind=kind, text=text, size=len(data))
+    mime_type = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}.get(ext, "")
+    return AttachmentContext(filename=filename, kind=kind, text=text, size=len(data), data=data if ext in IMAGE_EXTENSIONS else b"", mime_type=mime_type)
 
 
 def build_context(attachments: list[AttachmentContext]) -> str:
@@ -121,6 +124,6 @@ def build_context(attachments: list[AttachmentContext]) -> str:
         elif item.kind == "IMAGE":
             parts.append(
                 f"ATTACHED IMAGE: {item.filename}\n"
-                "[Image content is available to the multimodal model when supported.]"
+                "[Visual content will be analyzed by ScoutAI before synthesis.]"
             )
     return "\n\n---\n\n".join(parts)
