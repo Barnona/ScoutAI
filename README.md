@@ -37,6 +37,8 @@ It combines Gemma for reasoning and synthesis with SerpApi for live web retrieva
 - **Source quality signals** — surfaces transparent heuristic quality metadata for sources.
 - **Live research trace** — streams planning, search, verification, contradiction, follow-up, and synthesis events through SSE.
 - **Responsive web console** — desktop and phone layouts with light/dark theme support.
+- **Multimodal attachments** — attach PDFs, Word documents, spreadsheets, presentations, text files, and images as research context.
+- **Visual evidence analysis** — Gemma 4 analyzes attached images for readable text, diagrams, charts, tables, quantities, and visual relationships before research synthesis.
 - **API + web UI** — the research engine can be used independently of the frontend.
 
 ## Architecture
@@ -122,7 +124,8 @@ ScoutAI/
 │   ├── research/
 │   │   ├── events.py
 │   │   ├── evidence.py
-│   │   └── verifier.py
+│   │   ├── verifier.py
+│   │   └── attachments.py
 │   └── main.py
 │
 ├── config/
@@ -206,6 +209,18 @@ standard
 deep
 investigative
 ```
+
+### Research with Attachments
+
+The research endpoints accept multipart form data when attachments are included.
+
+Supported attachment types:
+
+```text
+PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, CSV, TXT, Markdown, PNG, JPG/JPEG, WEBP
+```
+
+Text-based files are extracted locally before entering the research workflow. Images are analyzed by the configured multimodal Gemma model and their visual findings are added to the research context.
 
 ### Streaming Research
 
