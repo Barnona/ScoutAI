@@ -272,7 +272,23 @@ Rules:
         return data
 
     def research(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
-        profile = get_research_profile(depth)\n        visual_context = self._analyze_images(attachments or [])\n        attachment_context = build_context(attachments or [])\n        research_question = question\n        if attachment_context or visual_context:\n            research_question += "\\n\\nUSER ATTACHMENTS:\\n" + attachment_context\n        if visual_context:\n            research_question += "\\n\\nVISUAL ANALYSIS:\\n" + visual_context\n        if emit and attachments:\n            emit(ResearchEvent("attachments", f"{len(attachments)} attachment(s) loaded", {"files": [a.filename for a in attachments]}).as_dict())\n        plan = self._plan(research_question, profile["searches"])
+        profile = get_research_profile(depth)
+        visual_context = self._analyze_images(attachments or [])
+        attachment_context = build_context(attachments or [])
+        research_question = question
+        if attachment_context or visual_context:
+            research_question += "\
+\
+USER ATTACHMENTS:\
+" + attachment_context
+        if visual_context:
+            research_question += "\
+\
+VISUAL ANALYSIS:\
+" + visual_context
+        if emit and attachments:
+            emit(ResearchEvent("attachments", f"{len(attachments)} attachment(s) loaded", {"files": [a.filename for a in attachments]}).as_dict())
+        plan = self._plan(research_question, profile["searches"])
         if emit:
             emit(ResearchEvent("planning_complete", "Research plan created", {"tasks": len(plan.tasks)}).as_dict())
         queries = [task.question for task in plan.tasks][:profile["searches"]]
