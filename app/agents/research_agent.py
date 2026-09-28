@@ -277,15 +277,9 @@ Rules:
         attachment_context = build_context(attachments or [])
         research_question = question
         if attachment_context or visual_context:
-            research_question += "\
-\
-USER ATTACHMENTS:\
-" + attachment_context
+            research_question += "\n\nUSER ATTACHMENTS:\n" + attachment_context
         if visual_context:
-            research_question += "\
-\
-VISUAL ANALYSIS:\
-" + visual_context
+            research_question += "\n\nVISUAL ANALYSIS:\n" + visual_context
         if emit and attachments:
             emit(ResearchEvent("attachments", f"{len(attachments)} attachment(s) loaded", {"files": [a.filename for a in attachments]}).as_dict())
         plan = self._plan(research_question, profile["searches"])
