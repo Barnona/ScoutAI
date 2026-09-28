@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 from google import genai
+from google.genai import types
 
 from config.settings import GEMINI_API_KEY, GEMMA_MODEL, GEMMA_FALLBACK_MODEL, get_research_profile
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
@@ -60,6 +61,51 @@ class ScoutAIResearchAgent:
         if start < 0 or end <= start:
             raise ValueError("Gemma did not return a JSON object.")
         return json.loads(cleaned[start:end + 1])
+
+    def _analyze_images(self, attachments: list[AttachmentContext]) -> str:
+        images = [a for a in attachments if a.kind == "IMAGE" and a.data]
+        if not images:
+            return ""
+
+        parts: list[Any] = []
+        for item in images[:4]:
+            parts.append(types.Part.from_bytes(data=item.data, mime_type=item.mime_type))
+        parts.append(
+            """Analyze the attached images as research evidence for the user's question.
+For each image:
+- identify visible objects, diagrams, charts, tables, labels, and readable text;
+- extract quantitative values when legible;
+- explain relevant relationships or visual patterns;
+- clearly mark anything uncertain or unreadable;
+- do not invent missing information.
+
+Return concise structured prose grouped by filename."""
+        )
+
+        last_error = None
+        models = [self.model]
+        if GEMMA_FALLBACK_MODEL and GEMMA_FALLBACK_MODEL != self.model:
+            models.append(GEMMA_FALLBACK_MODEL)
+
+        for model in models:
+            for attempt in range(3):
+                try:
+                    response = self.client.models.generate_content(
+                        model=model,
+                        contents=parts,
+                    )
+                    text = getattr(response, "text", None)
+                    if text:
+                        return text.strip()
+                    raise RuntimeError("Gemma returned an empty visual analysis.")
+                except Exception as exc:
+                    last_error = exc
+                    if attempt < 2:
+                        time.sleep(2 ** attempt * 2)
+
+        raise RuntimeError(
+            f"Gemma visual analysis failed for {', '.join(models)} after retries: {last_error}"
+        ) from last_error
 
     def _plan(self, question: str, max_searches: int) -> ResearchPlan:
         prompt = f"""You are ScoutAI's research planner.
@@ -226,8 +272,7 @@ Rules:
         return data
 
     def research(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
-        profile = get_research_profile(depth)
-        plan = self._plan(question, profile["searches"])
+        profile = get_research_profile(depth)\n        visual_context = self._analyze_images(attachments or [])\n        attachment_context = build_context(attachments or [])\n        research_question = question\n        if attachment_context or visual_context:\n            research_question += "\\n\\nUSER ATTACHMENTS:\\n" + attachment_context\n        if visual_context:\n            research_question += "\\n\\nVISUAL ANALYSIS:\\n" + visual_context\n        if emit and attachments:\n            emit(ResearchEvent("attachments", f"{len(attachments)} attachment(s) loaded", {"files": [a.filename for a in attachments]}).as_dict())\n        plan = self._plan(research_question, profile["searches"])
         if emit:
             emit(ResearchEvent("planning_complete", "Research plan created", {"tasks": len(plan.tasks)}).as_dict())
         queries = [task.question for task in plan.tasks][:profile["searches"]]
