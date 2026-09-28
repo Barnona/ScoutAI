@@ -146,3 +146,6 @@ html[data-theme="light"] .depthPicker button.selected{background:#7041d8;border-
 .exportPdf:disabled{opacity:.45;cursor:not-allowed}
 html[data-theme="light"] .exportPdf:hover{background:rgba(0,143,122,.08)}
 @media(max-width:700px){.reportActions{width:100%;justify-content:space-between;gap:8px}.exportPdf{padding:8px 9px;font-size:8px}}
+
+.missionTools{display:flex;align-items:center;gap:8px;flex:none}.attachButton{border:1px solid var(--line);background:transparent;color:var(--muted);padding:8px 10px;font:700 9px Space Mono,monospace;white-space:nowrap}.attachButton:hover{border-color:var(--cyan);color:var(--cyan)}.attachButton:disabled{opacity:.45;cursor:not-allowed}.fileCount{color:var(--cyan);font:700 8px Space Mono,monospace;white-space:nowrap}.missionFooter .presets{flex:1;min-width:0}
+@media(max-width:700px){.missionTools{width:100%;justify-content:flex-start}.attachButton{padding:9px 10px}.missionFooter .presets{width:100%}}
