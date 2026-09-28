@@ -6,6 +6,7 @@ import time
 from typing import Any
 
 from google import genai
+from google.genai import types
 
 from config.settings import GEMINI_API_KEY, GEMMA_MODEL, GEMMA_FALLBACK_MODEL, get_research_profile
 from app.agents.schemas import ResearchPlan, ResearchResult, VerifiedClaim, Contradiction
@@ -15,6 +16,7 @@ from app.research.verifier import verification_prompt
 from app.research.contradiction import contradiction_prompt
 from app.tools.search import web_search
 from app.research.events import ResearchEvent
+from app.research.attachments import AttachmentContext, build_context
 
 
 class ScoutAIResearchAgent:
@@ -59,6 +61,51 @@ class ScoutAIResearchAgent:
         if start < 0 or end <= start:
             raise ValueError("Gemma did not return a JSON object.")
         return json.loads(cleaned[start:end + 1])
+
+    def _analyze_images(self, attachments: list[AttachmentContext]) -> str:
+        images = [a for a in attachments if a.kind == "IMAGE" and a.data]
+        if not images:
+            return ""
+
+        parts: list[Any] = []
+        for item in images[:4]:
+            parts.append(types.Part.from_bytes(data=item.data, mime_type=item.mime_type))
+        parts.append(
+            """Analyze the attached images as research evidence for the user's question.
+For each image:
+- identify visible objects, diagrams, charts, tables, labels, and readable text;
+- extract quantitative values when legible;
+- explain relevant relationships or visual patterns;
+- clearly mark anything uncertain or unreadable;
+- do not invent missing information.
+
+Return concise structured prose grouped by filename."""
+        )
+
+        last_error = None
+        models = [self.model]
+        if GEMMA_FALLBACK_MODEL and GEMMA_FALLBACK_MODEL != self.model:
+            models.append(GEMMA_FALLBACK_MODEL)
+
+        for model in models:
+            for attempt in range(3):
+                try:
+                    response = self.client.models.generate_content(
+                        model=model,
+                        contents=parts,
+                    )
+                    text = getattr(response, "text", None)
+                    if text:
+                        return text.strip()
+                    raise RuntimeError("Gemma returned an empty visual analysis.")
+                except Exception as exc:
+                    last_error = exc
+                    if attempt < 2:
+                        time.sleep(2 ** attempt * 2)
+
+        raise RuntimeError(
+            f"Gemma visual analysis failed for {', '.join(models)} after retries: {last_error}"
+        ) from last_error
 
     def _plan(self, question: str, max_searches: int) -> ResearchPlan:
         prompt = f"""You are ScoutAI's research planner.
@@ -224,9 +271,18 @@ Rules:
         data.setdefault("overall_confidence", "low")
         return data
 
-    def research(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+    def research(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
         profile = get_research_profile(depth)
-        plan = self._plan(question, profile["searches"])
+        visual_context = self._analyze_images(attachments or [])
+        attachment_context = build_context(attachments or [])
+        research_question = question
+        if attachment_context or visual_context:
+            research_question += "\n\nUSER ATTACHMENTS:\n" + attachment_context
+        if visual_context:
+            research_question += "\n\nVISUAL ANALYSIS:\n" + visual_context
+        if emit and attachments:
+            emit(ResearchEvent("attachments", f"{len(attachments)} attachment(s) loaded", {"files": [a.filename for a in attachments]}).as_dict())
+        plan = self._plan(research_question, profile["searches"])
         if emit:
             emit(ResearchEvent("planning_complete", "Research plan created", {"tasks": len(plan.tasks)}).as_dict())
         queries = [task.question for task in plan.tasks][:profile["searches"]]
@@ -244,7 +300,7 @@ Rules:
 
         if emit:
             emit(ResearchEvent("verifying", "Extracting and verifying claims").as_dict())
-        verified = self._verify(sources, question)
+        verified = self._verify(sources, research_question)
         contradictions = self._contradictions(sources)
         if emit:
             emit(ResearchEvent("contradictions", "Contradiction analysis complete", {"count": len(contradictions)}).as_dict())
@@ -252,7 +308,7 @@ Rules:
         # Autonomous verification loop: unresolved claims/conflicts trigger
         # targeted searches, followed by another verification pass.
         for round_no in range(profile["rounds"]):
-            followups = self._followup_queries(question, verified, contradictions, profile["followups"])
+            followups = self._followup_queries(research_question, verified, contradictions, profile["followups"])
             if emit:
                 emit(ResearchEvent("verification_round", f"Verification round {round_no + 1}", {"round": round_no + 1, "gaps": len(followups)}).as_dict())
             if emit and followups:
@@ -268,12 +324,12 @@ Rules:
                 {"title": s.title, "url": s.url, "snippet": s.snippet, "source": s.publisher}
                 for s in sources
             ] + new_raw)[:profile["sources"]]
-            verified = self._verify(sources, question)
+            verified = self._verify(sources, research_question)
             contradictions = self._contradictions(sources)
 
         if emit:
             emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict())
-        synthesis = self._synthesize(question, plan, sources, verified, contradictions)
+        synthesis = self._synthesize(research_question, plan, sources, verified, contradictions)
         result = ResearchResult(
             question=question,
             plan=plan,
@@ -298,15 +354,15 @@ Rules:
                 output.append(item)
         return output
 
-    async def run(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+    async def run(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
         if emit:
             emit(ResearchEvent("planning", "Planning research tasks").as_dict())
-        return await asyncio.to_thread(self.research, question, emit, depth)
+        return await asyncio.to_thread(self.research, question, emit, depth, attachments)
 
 
 research_agent = ScoutAIResearchAgent()
 
 
-async def run_research(question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+async def run_research(question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
     """Run a research mission, optionally streaming progress events."""
-    return await research_agent.run(question, emit=emit, depth=depth)
+    return await research_agent.run(question, emit=emit, depth=depth, attachments=attachments)

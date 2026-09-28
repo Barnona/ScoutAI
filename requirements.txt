@@ -9,3 +9,8 @@ numpy
 pytest
 httpx
 reportlab
+python-multipart
+python-docx
+openpyxl
+python-pptx
+pypdf
