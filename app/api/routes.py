@@ -1,28 +1,52 @@
 import asyncio
 import json
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse, Response
 
 from app.agents.research_agent import run_research
 from app.api.models import ResearchRequest, ResearchResponse
+from app.research.attachments import extract_attachment, AttachmentContext
 from app.reports.pdf import build_research_pdf
 
 router = APIRouter(prefix="/api", tags=["research"])
 
 
+async def _read_attachments(files: list[UploadFile] | None) -> list[AttachmentContext]:
+    attachments = []
+    for file in files or []:
+        data = await file.read()
+        try:
+            attachments.append(extract_attachment(file.filename or "attachment", data))
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return attachments
+
+
 @router.post("/research", response_model=ResearchResponse)
-async def research(request: ResearchRequest) -> ResearchResponse:
+async def research(
+    question: str = Form(...),
+    depth: str = Form("standard"),
+    files: list[UploadFile] | None = File(default=None),
+) -> ResearchResponse:
+    request = ResearchRequest(question=question, depth=depth)
+    attachments = await _read_attachments(files)
     try:
-        report = await run_research(request.question, depth=request.depth)
+        report = await run_research(request.question, depth=request.depth, attachments=attachments)
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
-
     return ResearchResponse(question=request.question, report=report)
 
 
 @router.post("/research/stream")
-async def research_stream(request: ResearchRequest) -> StreamingResponse:
+async def research_stream(
+    question: str = Form(...),
+    depth: str = Form("standard"),
+    files: list[UploadFile] | None = File(default=None),
+) -> StreamingResponse:
+    attachments = await _read_attachments(files)
+    ResearchRequest(question=question, depth=depth)
+
     async def event_stream():
         queue: asyncio.Queue[dict] = asyncio.Queue()
         loop = asyncio.get_running_loop()
@@ -30,7 +54,9 @@ async def research_stream(request: ResearchRequest) -> StreamingResponse:
         def emit(event: dict):
             loop.call_soon_threadsafe(queue.put_nowait, event)
 
-        task = asyncio.create_task(run_research(request.question, emit=emit, depth=request.depth))
+        task = asyncio.create_task(
+            run_research(question, emit=emit, depth=depth, attachments=attachments)
+        )
 
         try:
             while True:
