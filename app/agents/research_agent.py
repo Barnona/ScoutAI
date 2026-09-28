@@ -15,6 +15,7 @@ from app.research.verifier import verification_prompt
 from app.research.contradiction import contradiction_prompt
 from app.tools.search import web_search
 from app.research.events import ResearchEvent
+from app.research.attachments import AttachmentContext, build_context
 
 
 class ScoutAIResearchAgent:
@@ -224,7 +225,7 @@ Rules:
         data.setdefault("overall_confidence", "low")
         return data
 
-    def research(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+    def research(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
         profile = get_research_profile(depth)
         plan = self._plan(question, profile["searches"])
         if emit:
@@ -244,7 +245,7 @@ Rules:
 
         if emit:
             emit(ResearchEvent("verifying", "Extracting and verifying claims").as_dict())
-        verified = self._verify(sources, question)
+        verified = self._verify(sources, research_question)
         contradictions = self._contradictions(sources)
         if emit:
             emit(ResearchEvent("contradictions", "Contradiction analysis complete", {"count": len(contradictions)}).as_dict())
@@ -252,7 +253,7 @@ Rules:
         # Autonomous verification loop: unresolved claims/conflicts trigger
         # targeted searches, followed by another verification pass.
         for round_no in range(profile["rounds"]):
-            followups = self._followup_queries(question, verified, contradictions, profile["followups"])
+            followups = self._followup_queries(research_question, verified, contradictions, profile["followups"])
             if emit:
                 emit(ResearchEvent("verification_round", f"Verification round {round_no + 1}", {"round": round_no + 1, "gaps": len(followups)}).as_dict())
             if emit and followups:
@@ -268,12 +269,12 @@ Rules:
                 {"title": s.title, "url": s.url, "snippet": s.snippet, "source": s.publisher}
                 for s in sources
             ] + new_raw)[:profile["sources"]]
-            verified = self._verify(sources, question)
+            verified = self._verify(sources, research_question)
             contradictions = self._contradictions(sources)
 
         if emit:
             emit(ResearchEvent("synthesizing", "Writing evidence-based report").as_dict())
-        synthesis = self._synthesize(question, plan, sources, verified, contradictions)
+        synthesis = self._synthesize(research_question, plan, sources, verified, contradictions)
         result = ResearchResult(
             question=question,
             plan=plan,
@@ -298,15 +299,15 @@ Rules:
                 output.append(item)
         return output
 
-    async def run(self, question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+    async def run(self, question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
         if emit:
             emit(ResearchEvent("planning", "Planning research tasks").as_dict())
-        return await asyncio.to_thread(self.research, question, emit, depth)
+        return await asyncio.to_thread(self.research, question, emit, depth, attachments)
 
 
 research_agent = ScoutAIResearchAgent()
 
 
-async def run_research(question: str, emit=None, depth: str = "standard") -> dict[str, Any]:
+async def run_research(question: str, emit=None, depth: str = "standard", attachments: list[AttachmentContext] | None = None) -> dict[str, Any]:
     """Run a research mission, optionally streaming progress events."""
-    return await research_agent.run(question, emit=emit, depth=depth)
+    return await research_agent.run(question, emit=emit, depth=depth, attachments=attachments)
