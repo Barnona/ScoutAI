@@ -1,14 +1,16 @@
 # ScoutAI — Autonomous Research & Intelligence Agent
 
-ScoutAI is an autonomous research system that turns a broad question into a structured, evidence-backed research report.
+**ScoutAI** is an autonomous research console that turns a broad question into a structured, evidence-backed intelligence report.
 
-Instead of relying on a single model response, ScoutAI follows a research loop:
+Instead of treating research as a single LLM prompt, ScoutAI runs an investigation loop:
 
 ```text
-Plan → Search → Verify → Challenge → Synthesize
+Plan → Search → Verify → Challenge → Recheck → Synthesize → Report
 ```
 
-It combines Gemma for reasoning and synthesis with SerpApi for live web retrieval, then exposes the research process through a FastAPI backend and a responsive Next.js console.
+It combines **Gemma** for planning, reasoning, multimodal analysis and synthesis with **SerpApi** for live web retrieval. A FastAPI backend orchestrates the research process and a responsive Next.js console exposes the live investigation trace.
+
+**Live site:** https://scoutai-nine.vercel.app/
 
 ## Screenshots
 
@@ -24,122 +26,277 @@ It combines Gemma for reasoning and synthesis with SerpApi for live web retrieva
 ### Intelligence Brief — Light
 ![ScoutAI Intelligence Brief — Light](./docs/screenshots/report-light.png)
 
-## Features
+## Core Features
 
-- **Autonomous research planning** — breaks a question into searchable research tasks.
-- **Live web retrieval** — uses SerpApi to gather current web evidence.
-- **Evidence collection** — normalizes sources and extracts claim-supporting evidence.
-- **Verification rounds** — revisits unresolved claims and evidence gaps.
-- **Contradiction detection** — identifies conflicting evidence instead of silently merging it.
-- **Follow-up research** — generates additional searches when the first evidence set is insufficient.
-- **Gemma synthesis** — produces the final structured research report from the collected evidence.
-- **Adaptive research depth** — choose Quick, Standard, Deep, or Investigative research.
-- **Source quality signals** — surfaces transparent heuristic quality metadata for sources.
-- **Live research trace** — streams planning, search, verification, contradiction, follow-up, and synthesis events through SSE.
-- **Responsive web console** — desktop and phone layouts with light/dark theme support.
-- **Multimodal attachments** — attach PDFs, Word documents, spreadsheets, presentations, text files, and images as research context.
-- **Visual evidence analysis** — Gemma 4 analyzes attached images for readable text, diagrams, charts, tables, quantities, and visual relationships before research synthesis.
-- **API + web UI** — the research engine can be used independently of the frontend.
+### Autonomous research
+
+- **Research planning** — decomposes a broad question into searchable research tasks.
+- **Live web retrieval** — gathers current information through SerpApi.
+- **Evidence collection** — normalizes retrieved sources and extracts claim-supporting evidence.
+- **Verification rounds** — checks unresolved claims and evidence gaps.
+- **Contradiction detection** — explicitly surfaces conflicting evidence.
+- **Targeted follow-up research** — launches additional searches when evidence is insufficient or contradictory.
+- **Evidence-aware synthesis** — Gemma produces the final report from the collected research context rather than from an isolated prompt.
+
+### Adaptive investigation depth
+
+Users can select four research profiles:
+
+| Mode | Search tasks | Source cap | Verification rounds | Follow-ups |
+|---|---:|---:|---:|---:|
+| **Quick** | 3 | 7 | 1 | 2 |
+| **Standard** | 5 | 12 | 2 | 4 |
+| **Deep** | 7 | 18 | 3 | 5 |
+| **Investigative** | 9 | 24 | 4 | 7 |
+
+This lets the same system handle a quick factual lookup as well as a more thorough investigation.
+
+### Multimodal attachments
+
+ScoutAI can use user-provided material as research context.
+
+Supported formats include:
+
+```text
+PDF
+DOC / DOCX
+XLS / XLSX
+PPT / PPTX
+CSV
+TXT / Markdown
+PNG / JPG / JPEG / WEBP
+```
+
+- PDFs and documents are text-extracted before entering the research workflow.
+- Spreadsheets are converted into structured row/cell text.
+- Presentations are processed slide by slide.
+- Images are passed to the configured multimodal Gemma model for visual analysis.
+- Visual analysis can extract readable text, diagrams, charts, tables, quantities, relationships and uncertainty.
+- Individual attachments are limited to 10 MB.
+
+This makes it possible to ask questions such as:
+
+> Verify the claims in this presentation against current web evidence.
+
+or:
+
+> Analyse this diagram and investigate whether the proposed design is technically suitable.
+
+### Resilient research sessions
+
+A temporary browser/network disconnect should not automatically destroy a running investigation.
+
+ScoutAI uses a mission-based streaming architecture:
+
+```text
+Start Mission
+     ↓
+Mission ID
+     ↓
+Research continues independently
+     ↓
+Events + result retained temporarily
+     ↓
+Browser reconnects
+     ↓
+Existing mission resumes
+```
+
+The backend keeps active/completed mission state temporarily, while the frontend automatically retries the research stream with exponential backoff.
+
+### Live research trace
+
+The console exposes the investigation as it happens:
+
+```text
+PLAN
+ ↓
+SEARCH
+ ↓
+EVIDENCE
+ ↓
+VERIFY
+ ↓
+CONFLICT
+ ↓
+RECHECK
+ ↓
+SYNTHESIZE
+ ↓
+COMPLETE
+```
+
+The trace is delivered using **Server-Sent Events (SSE)**.
+
+### Research report
+
+Completed investigations provide:
+
+- executive summary
+- research plan
+- key findings
+- claim confidence
+- evidence/source cards
+- source-quality signals
+- verification record
+- contradiction matrix
+- limitations
+- cited source URLs
+
+Reports can also be exported as a **PDF research brief**.
+
+### Source quality signals
+
+ScoutAI attaches transparent heuristic metadata to normalized sources using signals such as:
+
+- authoritative or institutional domains
+- primary-source indicators
+- technical/documentation indicators
+- publisher signals
+- URL/domain characteristics
+
+These are **heuristics**, not proof of correctness. Claim verification remains evidence-driven.
+
+### Responsive interface
+
+The Next.js console supports:
+
+- desktop and mobile layouts
+- dark/light themes
+- live mission statistics
+- research-depth selector
+- attachment picker
+- source and claim cards
+- contradiction panels
+- expandable evidence/reasoning
+- PDF export
+- responsive research trace
 
 ## Architecture
 
 ```text
-                         ┌─────────────────────┐
-                         │       User          │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │ Next.js Web Console  │
-                         │ Desktop + Mobile    │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │   FastAPI Backend   │
-                         └──────────┬──────────┘
-                                    │
-                  ┌─────────────────┼─────────────────┐
-                  ▼                 ▼                 ▼
-          ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-          │ Gemma        │  │   SerpApi    │  │ Verification │
-          │ Planning +   │  │ Live Search  │  │ + Evidence   │
-          │ Synthesis    │  │              │  │ Pipeline     │
-          └──────────────┘  └──────────────┘  └──────────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │ Cited Research      │
-                         │ Report + Trace      │
-                         └─────────────────────┘
+                              USER
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Next.js Console    │
+                    │  Desktop + Mobile    │
+                    └──────────┬───────────┘
+                               │
+                       HTTP + SSE
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │    FastAPI API       │
+                    │ Mission Orchestrator │
+                    └──────────┬───────────┘
+                               │
+             ┌─────────────────┼──────────────────┐
+             │                 │                  │
+             ▼                 ▼                  ▼
+      ┌─────────────┐   ┌─────────────┐   ┌──────────────┐
+      │    Gemma    │   │   SerpApi   │   │   Evidence   │
+      │ Planning    │   │ Live Web    │   │ Verification │
+      │ Vision      │   │ Retrieval   │   │ Contradiction│
+      │ Synthesis   │   │             │   │ Follow-ups   │
+      └─────────────┘   └─────────────┘   └──────────────┘
+             │                 │                  │
+             └─────────────────┼──────────────────┘
+                               ▼
+                    ┌──────────────────────┐
+                    │ Intelligence Report  │
+                    │ + Evidence + Trace   │
+                    └──────────────────────┘
 ```
 
-## Tech Stack
+## Technology Stack
 
 ### Backend
 
-- Python
-- FastAPI
-- Google GenAI SDK
-- Gemma
-- SerpApi
-- Pydantic
-- python-dotenv
-- FAISS / NumPy scaffolding for future retrieval and memory work
-- Pytest
-- HTTPX
+- **Python**
+- **FastAPI** — API and streaming layer
+- **Google GenAI SDK** — model communication
+- **Gemma 4** — planning, reasoning, image analysis and synthesis
+- **SerpApi** — live web search
+- **Pydantic** — request/response validation
+- **python-dotenv** — environment configuration
+- **ReportLab** — PDF report generation
+- **pypdf** — PDF text extraction
+- **python-docx** — DOCX extraction
+- **openpyxl** — XLSX extraction
+- **python-pptx** — PPTX extraction
+- **python-multipart** — multipart file uploads
+- **FAISS / NumPy** — retrieval/memory scaffolding
+- **Pytest / HTTPX** — testing
 
 ### Frontend
 
-- Next.js 16
-- React 19
-- JavaScript
-- Responsive CSS
-- Server-Sent Events (SSE)
+- **Next.js 16.3.6**
+- **React 19.1**
+- **JavaScript**
+- **Responsive CSS**
+- **Server-Sent Events (SSE)**
+- Native browser `FormData` and file APIs
 
-### Deployment
+### Infrastructure
 
 ```text
 GitHub
    │
-   ├──► Vercel
-   │      └── Next.js frontend
+   ├──────────────► Vercel
+   │                  └── Next.js frontend
    │
-   └──► Render
-          └── FastAPI backend
-                 ├── SerpApi
-                 └── Google AI Studio / Gemma
+   └──────────────► Render
+                      └── FastAPI backend
+                            │
+                            ├── Google AI / Gemma
+                            └── SerpApi
 ```
 
 ## Project Structure
 
 ```text
 ScoutAI/
+│
 ├── app/
 │   ├── agents/
-│   │   └── research_agent.py
+│   │   └── research_agent.py       # Research planning, verification,
+│   │                               # follow-ups, visual analysis, synthesis
+│   │
 │   ├── api/
-│   │   ├── models.py
-│   │   └── routes.py
+│   │   ├── models.py              # API models
+│   │   └── routes.py              # Research, streaming, reconnect, PDF
+│   │
 │   ├── research/
-│   │   ├── events.py
-│   │   ├── evidence.py
-│   │   ├── verifier.py
-│   │   └── attachments.py
-│   └── main.py
+│   │   ├── attachments.py         # File extraction + attachment context
+│   │   ├── events.py              # Research event definitions
+│   │   ├── evidence.py            # Source/evidence normalization
+│   │   └── verifier.py            # Claim verification logic
+│   │
+│   └── main.py                    # FastAPI application + CORS
 │
 ├── config/
-│   └── settings.py
+│   └── settings.py                # Models, API keys and research profiles
 │
-├── data/
+├── data/                          # Runtime/data workspace
 │
 ├── frontend/
 │   ├── app/
-│   │   ├── page.js
-│   │   └── globals.css
+│   │   ├── page.js                # Main ScoutAI console
+│   │   ├── globals.css            # UI/theme/responsive styles
+│   │   ├── layout.js              # SEO metadata + favicon
+│   │   ├── robots.js              # Search crawler rules
+│   │   └── sitemap.js             # Generated sitemap
+│   │
+│   ├── public/
+│   │   ├── favicon.svg            # ScoutAI cyan logo
+│   │   └── google*.html           # Search Console verification file
+│   │
 │   ├── package.json
-│   ├── next.config.mjs
 │   └── README.md
+│
+├── docs/
+│   └── screenshots/               # Project screenshots used by README
 │
 ├── scripts/
 ├── tests/
@@ -150,30 +307,43 @@ ScoutAI/
 └── README.md
 ```
 
-## Research Depth
+## Research Pipeline
 
-ScoutAI supports four research profiles:
+A typical investigation follows:
 
-| Mode | Search tasks | Source cap | Verification rounds | Follow-up queries |
-|---|---:|---:|---:|---:|
-| **Quick** | 3 | 7 | 1 | 2 |
-| **Standard** | 5 | 12 | 2 | 4 |
-| **Deep** | 7 | 18 | 3 | 5 |
-| **Investigative** | 9 | 24 | 4 | 7 |
+```text
+User Question
+     │
+     ▼
+Research Plan
+     │
+     ▼
+Live Search
+     │
+     ▼
+Evidence Collection
+     │
+     ▼
+Verification
+     │
+     ├─────────── consistent ───────────┐
+     │                                  │
+     └────────── contradiction ──► Challenge
+                                        │
+                                        ▼
+                                Targeted Re-search
+                                        │
+                                        ▼
+                                   Re-verification
+                                        │
+                                        ▼
+                                   Synthesis
+                                        │
+                                        ▼
+                              Cited Intelligence Brief
+```
 
-The agent can stop verification early when there are no unresolved claims or contradictions requiring additional research.
-
-## Source Quality
-
-Each normalized source receives transparent heuristic metadata based on signals such as:
-
-- institutional or authoritative domains
-- primary-source indicators
-- technical/documentation indicators
-- known publisher signals
-- URL/domain characteristics
-
-The quality signal is displayed alongside the source in the console. It is a heuristic and does **not** replace evidence-based claim verification.
+Attachments enter the same pipeline as additional research context.
 
 ## API
 
@@ -183,58 +353,35 @@ The quality signal is displayed alongside the source in the console. It is a heu
 GET /health
 ```
 
-Expected response:
+Returns:
 
 ```json
-{"status":"ok"}
+{"status":"healthy"}
 ```
 
-### Research
+### Standard Research
 
 ```http
 POST /api/research
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-  "question": "Your research question",
-  "depth": "standard"
-}
+question=Your research question
+depth=standard
+files=<optional attachment>
 ```
-
-Supported depth values:
-
-```text
-quick
-standard
-deep
-investigative
-```
-
-### Research with Attachments
-
-The research endpoints accept multipart form data when attachments are included.
-
-Supported attachment types:
-
-```text
-PDF, DOC/DOCX, XLS/XLSX, PPT/PPTX, CSV, TXT, Markdown, PNG, JPG/JPEG, WEBP
-```
-
-Text-based files are extracted locally before entering the research workflow. Images are analyzed by the configured multimodal Gemma model and their visual findings are added to the research context.
 
 ### Streaming Research
 
 ```http
 POST /api/research/stream
-Content-Type: application/json
+Content-Type: multipart/form-data
 
-{
-  "question": "Your research question",
-  "depth": "standard"
-}
+question=Your research question
+depth=standard
+files=<optional attachment>
 ```
 
-The streaming endpoint sends Server-Sent Events while the research runs.
+The response is an SSE stream.
 
 Typical event progression:
 
@@ -258,37 +405,58 @@ synthesizing
 complete
 ```
 
+### Reconnect to an Existing Mission
+
+```http
+GET /api/research/stream/{run_id}
+```
+
+This endpoint allows a disconnected frontend to resume receiving events from an existing research mission.
+
+### PDF Export
+
+```http
+POST /api/research/pdf
+Content-Type: application/json
+
+{
+  "report": { "...completed report..." },
+  "depth": "standard"
+}
+```
+
+Returns:
+
+```text
+application/pdf
+```
+
 ## Local Setup
 
-### 1. Clone the repository
+### 1. Clone
 
 ```powershell
 git clone https://github.com/Barnona/ScoutAI.git
 cd ScoutAI
 ```
 
-### 2. Create and activate a Python environment
+### 2. Backend environment
 
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
-```
-
-### 3. Install backend dependencies
-
-```powershell
 pip install -r requirements.txt
 ```
 
-### 4. Configure environment variables
+### 3. Environment variables
 
-Create `.env` from the example:
+Create `.env` from `.env.example`:
 
 ```powershell
 Copy-Item .env.example .env
 ```
 
-Set:
+Configure:
 
 ```env
 GEMINI_API_KEY=your_google_ai_studio_key
@@ -297,13 +465,18 @@ GEMMA_FALLBACK_MODEL=gemma-4-26b-a4b-it
 SERPAPI_API_KEY=your_serpapi_key
 ```
 
-Optional research budget variables are available through the backend configuration.
+Optional research-budget variables:
+
+```env
+MAX_SEARCHES=5
+MAX_SOURCES=12
+MAX_VERIFICATION_ROUNDS=2
+MAX_FOLLOWUP_SEARCHES=4
+```
 
 **Never commit `.env` or API keys.**
 
-## Run the Backend
-
-Start the FastAPI development server:
+### 4. Run backend
 
 ```powershell
 uvicorn app.main:app --reload
@@ -315,21 +488,15 @@ Backend:
 http://127.0.0.1:8000
 ```
 
-API documentation:
+Swagger/OpenAPI:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-You can also run the research agent directly:
+### 5. Run frontend
 
-```powershell
-python -m scripts.run_agent
-```
-
-## Run the Frontend
-
-Open a second terminal:
+In another terminal:
 
 ```powershell
 cd frontend
@@ -343,13 +510,13 @@ Open:
 http://localhost:3000
 ```
 
-By default, the frontend expects the backend at:
+The frontend defaults to:
 
 ```text
 http://localhost:8000
 ```
 
-To change it, create `frontend/.env.local`:
+Override it with `frontend/.env.local`:
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
@@ -359,7 +526,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8000
 
 ### Backend — Render
 
-The repository contains `render.yaml` for the FastAPI service.
+The repository includes `render.yaml`.
 
 Render runs:
 
@@ -378,19 +545,15 @@ GEMMA_FALLBACK_MODEL
 FRONTEND_ORIGINS
 ```
 
-Set `FRONTEND_ORIGINS` to the deployed Vercel URL, for example:
-
-```text
-https://your-scoutai.vercel.app
-```
+Set `FRONTEND_ORIGINS` to the Vercel production origin.
 
 ### Frontend — Vercel
 
-Deploy the repository to Vercel with:
+Recommended configuration:
 
 ```text
 Root Directory: frontend
-Framework Preset: Next.js
+Framework: Next.js
 Build Command: npm run build
 Install Command: npm install
 ```
@@ -398,92 +561,101 @@ Install Command: npm install
 Set:
 
 ```text
-NEXT_PUBLIC_API_URL=https://YOUR-RENDER-SERVICE.onrender.com
+NEXT_PUBLIC_API_URL=<your Render service URL>
+NEXT_PUBLIC_SITE_URL=https://scoutai-nine.vercel.app
 ```
 
-The API URL should be the **base Render URL**, not `/api/research`.
+### Production
 
-After changing `NEXT_PUBLIC_API_URL`, redeploy the Vercel project.
-
-## Troubleshooting
-
-### Frontend reports HTTP 404
-
-Check:
-
-1. The Render service is running.
-2. `https://YOUR-RENDER-SERVICE.onrender.com/health` returns `{"status":"ok"}`.
-3. `NEXT_PUBLIC_API_URL` contains only the Render base URL.
-4. The Vercel deployment was rebuilt after changing the environment variable.
-5. `FRONTEND_ORIGINS` includes the Vercel domain.
-
-A browser GET to `/api/research` is not a valid research request; the endpoint expects POST.
-
-### Gemma request errors
-
-ScoutAI retries failed model requests and can fall back from the primary configured Gemma model to the fallback model.
-
-Default configuration:
-
-```env
-GEMMA_MODEL=gemma-4-31b-it
-GEMMA_FALLBACK_MODEL=gemma-4-26b-a4b-it
+```text
+https://scoutai-nine.vercel.app/
 ```
 
-Availability and rate limits depend on the Google AI Studio account and model access.
+## Search Engine Setup
+
+ScoutAI includes:
+
+- favicon
+- SEO metadata
+- robots rules
+- generated sitemap
+- Google Search Console verification file
+
+Production endpoints:
+
+```text
+https://scoutai-nine.vercel.app/robots.txt
+https://scoutai-nine.vercel.app/sitemap.xml
+```
+
+The site is configured to allow indexing.
 
 ## Testing
 
-Run the test suite with:
+Run:
 
 ```powershell
 pytest
 ```
 
-Research-depth configuration has regression coverage in:
+Before a release, verify:
 
-```text
-tests/test_research_profiles.py
-```
+- backend `/health`
+- all four research depths
+- research completion
+- live event trace
+- source cards and citations
+- contradiction handling
+- PDF export
+- dark/light themes
+- mobile layout
+- attachment upload
+- PDF/DOCX/XLSX/PPTX extraction
+- image analysis
+- temporary network disconnect/reconnection
+- Vercel → Render communication
+- Search Console verification
 
 ## Design Philosophy
 
-ScoutAI is designed around a simple principle:
+> **Research should be a process, not a single prompt.**
 
-> Research should be a process, not a single prompt.
-
-The system therefore makes the research loop visible:
+ScoutAI deliberately makes the investigation visible instead of presenting an unexplained final answer.
 
 ```text
 Plan
  ↓
-Retrieve evidence
+Retrieve
  ↓
-Check evidence
+Verify
  ↓
-Challenge weak or conflicting claims
+Challenge
  ↓
-Retrieve again when necessary
+Recheck
  ↓
 Synthesize
 ```
 
-The goal is not to hide uncertainty. Contradictions, evidence gaps, source metadata, and the research trace are surfaced as part of the result.
+The system surfaces evidence gaps, contradictions, source metadata and research progress as part of the user experience.
 
 ## Current Scope
 
-ScoutAI currently focuses on:
+ScoutAI currently provides:
 
-- web-based research
-- evidence collection
-- verification
-- contradiction analysis
+- autonomous web research
 - adaptive research depth
-- cited synthesis
-- live research tracing
-- responsive research UI
+- evidence collection and verification
+- contradiction analysis
+- targeted follow-up searches
+- multimodal document/image attachments
+- resilient streaming research sessions
+- cited intelligence reports
+- PDF export
+- responsive desktop/mobile UI
+- light/dark themes
+- SEO/indexing support
 
-FAISS/RAG and longer-term memory capabilities are present as scaffolding for future expansion rather than being required for the current research pipeline.
+FAISS/NumPy retrieval and memory components remain available as scaffolding for future expansion; they are not required by the current core research loop.
 
 ## License
 
