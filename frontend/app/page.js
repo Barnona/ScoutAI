@@ -20,8 +20,20 @@ async function exportPdf(){if(!result||exporting)return;setExporting(true);setEr
  const active=useMemo(()=>{let n=-1;events.forEach(e=>{const i=stages.findIndex(s=>s[0]===e.type);if(i>=0)n=Math.max(n,i)});return n},[events]);
  async function launch(){
   if(!question.trim()||running)return;setRunning(true);setEvents([]);setResult(null);setError("");setSources(0);setConflicts(0);
-  try{const form=new FormData();form.append("question",question.trim());form.append("depth",depth);files.forEach(file=>form.append("files",file));const res=await fetch(API+"/api/research/stream",{method:"POST",body:form});if(!res.ok||!res.body)throw new Error("ScoutAI API returned HTTP "+res.status);const reader=res.body.getReader(),decoder=new TextDecoder();let buffer="";
-   while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const packets=buffer.split("\n\n");buffer=packets.pop()||"";for(const packet of packets){const line=packet.split("\n").find(x=>x.startsWith("data: "));if(!line)continue;const e=JSON.parse(line.slice(6));setEvents(x=>[...x,e]);if(e.type==="sources_found")setSources(e.data?.count||0);if(e.type==="contradictions")setConflicts(e.data?.count||0);if(e.type==="complete")setResult(e.data?.result||null);if(e.type==="error")setError(e.message||"Research failed.")}}}catch(e){setError(e.message||"Unable to connect to ScoutAI.")}finally{setRunning(false)}
+  try{
+   let runId=null;
+   const connect=async()=>{
+    const form=new FormData();form.append("question",question.trim());form.append("depth",depth);if(runId)form.append("run_id",runId);else files.forEach(file=>form.append("files",file));
+    const endpoint=runId?API+"/api/research/stream/"+runId:API+"/api/research/stream";
+    const res=await fetch(endpoint,{method:runId?"GET":"POST",body:runId?undefined:form});
+    if(!res.ok||!res.body)throw new Error("ScoutAI API returned HTTP "+res.status);
+    const reader=res.body.getReader(),decoder=new TextDecoder();let buffer="";
+    while(true){const {value,done}=await reader.read();if(done)break;buffer+=decoder.decode(value,{stream:true});const packets=buffer.split("\n\n");buffer=packets.pop()||"";for(const packet of packets){const line=packet.split("\n").find(x=>x.startsWith("data: "));if(!line)continue;const e=JSON.parse(line.slice(6));if(e._seq!=null){if(!runId)runId=e.run_id||runId;}setEvents(x=>[...x,e]);if(e.run_id)runId=e.run_id;if(e.type==="sources_found")setSources(e.data?.count||0);if(e.type==="contradictions")setConflicts(e.data?.count||0);if(e.type==="complete"){setResult(e.data?.result||null);return true}if(e.type==="error"){throw new Error(e.message||"Research failed.")}}}
+    return false;
+   };
+   let attempts=0;
+   while(attempts<8){try{const done=await connect();if(done)break;throw new Error("Research connection closed.");}catch(e){attempts++;if(!runId&&attempts>=2)throw e;if(attempts>=8)throw new Error("Connection lost. The research mission may still be running; please try reconnecting.");setError("Connection interrupted — reconnecting to your research mission…");await new Promise(resolve=>setTimeout(resolve,Math.min(1000*2**(attempts-1),8000)));}}
+  }catch(e){setError(e.message||"Unable to connect to ScoutAI.")}finally{setRunning(false)}
  }
  const synthesis=result?.synthesis||{},findings=synthesis.key_findings||[],sourceList=result?.sources||[];
  return <main className={"shell "+(running?"mission-active":"")}><div className="scanline"/>
